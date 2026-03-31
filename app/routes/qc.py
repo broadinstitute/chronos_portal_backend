@@ -10,13 +10,9 @@ from ..services.connection_manager import manager
 router = APIRouter()
 
 
-def parse_file(file_path: Path, *args, **kwargs) -> pd.DataFrame:
-    if file_path.suffix == ".csv":
-        return pd.read_csv(file_path, *args, **kwargs)
-    elif file_path.suffix == ".tsv":
-        return pd.read_csv(file_path, *args, **kwargs)
-    else:
-        raise ValueError(f"unexpected file suffix in {file_path}")
+def parse_file(file_path: Path, file_format: str, *args, **kwargs) -> pd.DataFrame:
+    sep = "\t" if file_format == "tsv" else ","
+    return pd.read_csv(file_path, sep=sep, *args, **kwargs)
 
 
 def parse_gene_list(file_path: Path) -> list[str]:
@@ -45,9 +41,19 @@ async def run_initial_qc(job_id: str, title: str):
 
         await manager.send_status("running", "Loading data files...", job_id)
 
-        readcounts = parse_file(readcounts_path, index_col=0).astype(float)
-        sequence_map = parse_file(condition_map_path)
-        guide_map = parse_file(guide_map_path)
+        readcounts = parse_file(
+            readcounts_path,
+            job_manager.get_file_format("readcounts"),
+            index_col=0
+        ).astype(float)
+        sequence_map = parse_file(
+            condition_map_path,
+            job_manager.get_file_format("condition_map")
+        )
+        guide_map = parse_file(
+            guide_map_path,
+            job_manager.get_file_format("guide_map")
+        )
 
         positive_controls = None
         negative_controls = None
@@ -93,6 +99,8 @@ async def run_initial_qc(job_id: str, title: str):
                 await manager.send_error(str(e), job_id)
                 return
 
+        job_manager.mark_qc_completed()
+
         await manager.send_status(
             "complete",
             "QC analysis complete!",
@@ -110,6 +118,8 @@ from typing import Optional
 class QCRequest(BaseModel):
     job_id: Optional[str] = None
     title: Optional[str] = None
+    condition1: Optional[str] = None
+    condition2: Optional[str] = None
 
 @router.post("/run-qc")
 async def start_qc(request: QCRequest = None):
@@ -131,6 +141,12 @@ async def start_qc(request: QCRequest = None):
 
     job_id = job_manager.current_job_id
     title = request.title if request and request.title else job_manager.get_title()
+
+    # Save compare conditions if provided
+    if request and (request.condition1 or request.condition2):
+        job_manager.set_compare_conditions(request.condition1, request.condition2)
+
+    job_manager.mark_qc_started()
 
     import asyncio
     asyncio.create_task(run_initial_qc(job_id, title))

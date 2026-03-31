@@ -9,7 +9,7 @@ router = APIRouter()
 
 
 def parse_file(file_path: Path, file_format: str) -> pd.DataFrame:
-    sep = "," if file_format == "csv" else "\t"
+    sep = "\t" if file_format == "tsv" else ","
     return pd.read_csv(file_path, sep=sep, index_col=0)
 
 
@@ -52,6 +52,7 @@ async def upload_file(
         f.write(content)
 
     job_manager.store_file_path(file_type, file_path)
+    job_manager.add_file_info(file_type, file.filename, file_format)
 
     try:
         if file_type in ["positive_controls", "negative_controls"]:
