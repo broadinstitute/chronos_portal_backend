@@ -1,23 +1,18 @@
 from fastapi import APIRouter, HTTPException, BackgroundTasks
 from pathlib import Path
-import pandas as pd
 import sys
 import traceback
 
 from ..services.job_manager import job_manager
 from ..services.connection_manager import manager
+from ..services.file_utils import parse_file, parse_gene_list
 
 router = APIRouter()
 
-
-def parse_file(file_path: Path, file_format: str, *args, **kwargs) -> pd.DataFrame:
-    sep = "\t" if file_format == "tsv" else ","
-    return pd.read_csv(file_path, sep=sep, *args, **kwargs)
-
-
-def parse_gene_list(file_path: Path) -> list[str]:
-    with open(file_path, "r") as f:
-        return [line.strip() for line in f if line.strip()]
+# Default control files
+DEFAULT_CONTROLS_DIR = Path(__file__).parent.parent / "data" / "controls"
+DEFAULT_POSITIVE_CONTROLS = DEFAULT_CONTROLS_DIR / "positive controls.txt"
+DEFAULT_NEGATIVE_CONTROLS = DEFAULT_CONTROLS_DIR / "negative controls.txt"
 
 
 async def run_initial_qc(job_id: str, title: str):
@@ -55,13 +50,42 @@ async def run_initial_qc(job_id: str, title: str):
             job_manager.get_file_format("guide_map")
         )
 
-        positive_controls = None
-        negative_controls = None
+        if not "sgrna" in guide_map:
+            raise KeyError("guide_map missing required column 'sgrna'")
+        if not "sequence_ID" in sequence_map:
+            raise KeyError("condition_map missing required column 'sequence_ID'")
 
+        if not len(
+            set(readcounts.columns) & set(guide_map.sgrna)
+        ) and not len(set(readcounts.index) & set(sequence_map.sequence_ID)
+        ):
+            if len(
+                set(readcounts.index) & set(guide_map.sgrna)
+                ) and len(set(readcounts.columns) & set(sequence_map.sequence_ID)
+            ):
+                #readcounts passed with guides as rows, sequences/replicates as columns
+                readcounts = readcounts.T
+            else:
+                raise ValueError("Readcounts columns and indices do not match the \
+condition mpa sequence IDs and guide map sgRNAs provided")
+
+        guide_map = guide_map[guide_map.sgrna.isin(readcounts.columns)]
+
+        # Load controls (use defaults if not provided)
         if positive_controls_path:
             positive_controls = parse_gene_list(positive_controls_path)
+        elif DEFAULT_POSITIVE_CONTROLS.exists():
+            positive_controls = parse_gene_list(DEFAULT_POSITIVE_CONTROLS)
+        else:
+            positive_controls = []
+
         if negative_controls_path:
             negative_controls = parse_gene_list(negative_controls_path)
+        elif DEFAULT_NEGATIVE_CONTROLS.exists():
+            negative_controls = parse_gene_list(DEFAULT_NEGATIVE_CONTROLS)
+        else:
+            negative_controls = []
+
 
         await manager.send_status("running", "Running Chronos QC...", job_id)
 

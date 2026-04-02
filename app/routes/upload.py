@@ -1,21 +1,52 @@
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from pathlib import Path
 from typing import Optional
-import pandas as pd
 
 from ..services.job_manager import job_manager
+from ..services.file_utils import parse_file, parse_gene_list
 
 router = APIRouter()
 
-
-def parse_file(file_path: Path, file_format: str) -> pd.DataFrame:
-    sep = "\t" if file_format == "tsv" else ","
-    return pd.read_csv(file_path, sep=sep, index_col=0)
+# Path to built-in library guide maps
+LIBRARIES_DIR = Path(__file__).parent.parent / "data" / "guide_maps"
 
 
-def parse_gene_list(file_path: Path) -> list[str]:
-    with open(file_path, "r") as f:
-        return [line.strip() for line in f if line.strip()]
+@router.get("/libraries")
+async def list_libraries():
+    """List available built-in sgRNA libraries."""
+    libraries = []
+    if LIBRARIES_DIR.exists():
+        for f in sorted(LIBRARIES_DIR.glob("*.csv")):
+            libraries.append(f.stem)
+    return {"libraries": libraries}
+
+
+@router.post("/set-library/{library_name}")
+async def set_library(
+    library_name: str,
+    job_id: Optional[str] = Form(None),
+    job_name: Optional[str] = Form(None),
+):
+    """Set a built-in library as the guide map for a job."""
+    library_path = LIBRARIES_DIR / f"{library_name}.csv"
+    if not library_path.exists():
+        raise HTTPException(status_code=404, detail=f"Library not found: {library_name}")
+
+    # Resume existing job or create new one
+    if job_id:
+        job_manager.resume_job(job_id)
+    elif not job_manager.current_job_id:
+        job_manager.create_job(job_name)
+
+    # Store the library path directly (no need to copy)
+    job_manager.store_file_path("guide_map", library_path)
+    job_manager.add_file_info("guide_map", f"{library_name}.csv", "csv", library_path)
+
+    return {
+        "status": "success",
+        "job_id": job_manager.current_job_id,
+        "library": library_name,
+    }
 
 
 @router.post("/upload/{file_type}")
@@ -52,7 +83,7 @@ async def upload_file(
         f.write(content)
 
     job_manager.store_file_path(file_type, file_path)
-    job_manager.add_file_info(file_type, file.filename, file_format)
+    job_manager.add_file_info(file_type, file.filename, file_format, file_path)
 
     try:
         if file_type in ["positive_controls", "negative_controls"]:

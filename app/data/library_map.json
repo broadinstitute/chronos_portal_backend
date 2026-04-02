@@ -1,0 +1,7 @@
+{
+	"Avana": {"guide_map": "Avana.csv", "library_label": "'Achilles-Avana-2D'"},
+	"Brunello": {"guide_map": "Brunello.csv", "library_label": "'Achilles-Brunello-2D'"},
+	"Humagne": {"guide_map": "Humagne.csv", "library_label": "Achilles-Humagne-CD-2D-NovaSeq"},
+	"KY": {"guide_map": "KY.csv", "library_label": "Achilles-KY-2D"},
+	"TKOv3": {"guide_map": "TKOv3.csv", "library_label": "Achilles-TKOv3-2D"}
+}

@@ -60,7 +60,7 @@ class JobManager:
         return job_id
 
     def resume_job(self, job_id: str):
-        """Resume an existing job, recovering file paths from disk."""
+        """Resume an existing job, recovering file paths from disk and config."""
         job_dir = self.jobs_dir / job_id
         if not job_dir.exists():
             # Job doesn't exist, create it
@@ -78,18 +78,25 @@ class JobManager:
         else:
             self.current_title = "Untitled Analysis"
 
-        # Recover uploaded files from disk
+        # Load config first to get stored file paths
+        self._load_config()
+
+        # Recover uploaded files from config paths (handles external files like libraries)
+        self.uploaded_files = {}
+        for file_type, file_info in self.job_config.get("files", {}).items():
+            if file_info.get("path"):
+                path = Path(file_info["path"])
+                if path.exists():
+                    self.uploaded_files[file_type] = path
+
+        # Also scan uploads dir for any files not in config (backwards compatibility)
         uploads_dir = job_dir / "uploads"
         if uploads_dir.exists():
-            self.uploaded_files = {}
             for file_path in uploads_dir.iterdir():
                 if file_path.is_file():
-                    # Extract file type from filename (e.g., "readcounts.csv" -> "readcounts")
                     file_type = file_path.stem
-                    self.uploaded_files[file_type] = file_path
-
-        # Load config if exists
-        self._load_config()
+                    if file_type not in self.uploaded_files:
+                        self.uploaded_files[file_type] = file_path
 
     def get_title(self) -> str:
         return self.current_title or "Untitled Analysis"
@@ -136,12 +143,15 @@ class JobManager:
                 "compare_conditions": None,
             }
 
-    def add_file_info(self, file_type: str, original_filename: str, file_format: str):
+    def add_file_info(self, file_type: str, original_filename: str, file_format: str, file_path: Path = None):
         """Record file metadata in job config."""
+        # Use provided path or get from uploaded_files
+        path = file_path or self.uploaded_files.get(file_type)
         self.job_config["files"][file_type] = {
             "original_filename": original_filename,
             "format": file_format,
             "uploaded_at": datetime.now().isoformat(),
+            "path": str(path) if path else None,
         }
         self._save_config()
 
