@@ -104,6 +104,9 @@ class JobManager:
     def get_job_dir(self, job_id: str) -> Path:
         return self.jobs_dir / job_id
 
+    def get_full_gene_effect_file(self) -> Path:
+        return "app/data/DepMapData/gene_effect.hdf5"
+
     def get_reports_dir(self, job_id: str) -> Path:
         return self.jobs_dir / job_id / "Reports"
 
@@ -164,6 +167,10 @@ class JobManager:
             }
             self._save_config()
 
+    def get_compare_conditions(self) -> dict:
+        """Get compare conditions from job config."""
+        return self.job_config.get("compare_conditions", {})
+
     def mark_qc_started(self):
         """Mark QC as started in job config."""
         self.job_config["qc_started_at"] = datetime.now().isoformat()
@@ -191,6 +198,24 @@ class JobManager:
         """Get the user-specified format for a file type."""
         file_info = self.job_config.get("files", {}).get(file_type, {})
         return file_info.get("format", "csv")
+
+    def set_library_label(self, label: str):
+        """Set the library label for Chronos input dicts."""
+        self.job_config["library_label"] = label
+        self._save_config()
+
+    def get_library_label(self) -> str:
+        """Get the library label for Chronos input dicts. Returns 'custom' if not set."""
+        return self.job_config.get("library_label", "custom")
+
+    def set_use_pretrained(self, use_pretrained: bool):
+        """Set whether to use pretrained parameters for Chronos."""
+        self.job_config["use_pretrained"] = use_pretrained
+        self._save_config()
+
+    def get_use_pretrained(self) -> bool:
+        """Get whether to use pretrained parameters. Returns True by default."""
+        return self.job_config.get("use_pretrained", True)
 
 
 job_manager = JobManager()

@@ -4,6 +4,7 @@ from pathlib import Path
 import json
 import re
 from pypdf import PdfReader
+from typing import List
 
 from ..services.job_manager import job_manager
 
@@ -288,3 +289,122 @@ async def get_chronos_qc_report(job_id: str):
         "title": title,
         "sections": sections,
     }
+
+
+# Hit Calling Report sections
+HITS_SECTIONS = [
+    {
+        "id": "fdr",
+        "title": "False Discovery Rates",
+        "pdf_heading": "False Discovery Rates",
+        "image_pattern": "fdr_volcano_*.png",
+    },
+    {
+        "id": "specific_biology",
+        "title": "Specific Biology",
+        "pdf_heading": "Specific Biology",
+        "image_pattern": "select_dependencies_*.png",
+    },
+]
+
+
+def extract_hits_pdf_sections(pdf_path: Path) -> dict[str, str]:
+    """Extract text sections from hit calling report PDF."""
+    reader = PdfReader(pdf_path)
+    full_text = ""
+    for page in reader.pages:
+        full_text += page.extract_text() + "\n"
+
+    target_headings = ["False Discovery Rates", "Specific Biology"]
+
+    heading_pattern = re.compile(
+        r'^([A-Z][A-Za-z0-9,\-\' ]{2,80})$',
+        re.MULTILINE
+    )
+
+    all_headings = [(m.start(), m.group(1).strip()) for m in heading_pattern.finditer(full_text)]
+
+    sections = {}
+    for target in target_headings:
+        target_match = re.search(re.escape(target), full_text, re.IGNORECASE)
+        if not target_match:
+            continue
+
+        start = target_match.end()
+        end = len(full_text)
+        for pos, heading_text in all_headings:
+            if pos > start and heading_text != target:
+                end = pos
+                break
+
+        text = full_text[start:end].strip()
+        text = re.sub(r'\n{3,}', '\n\n', text)
+        sections[target] = text
+
+    return sections
+
+
+@router.get("/reports/{job_id}/hits")
+async def get_hits_report(job_id: str):
+    """Get hit calling report sections with text and images."""
+    job_dir = job_manager.get_job_dir(job_id)
+    if not job_dir.exists():
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    reports_dir = job_manager.get_reports_dir(job_id)
+    if not reports_dir.exists():
+        raise HTTPException(status_code=404, detail="Reports not found")
+
+    # Get job title
+    title_file = job_dir / "title.txt"
+    title = title_file.read_text().strip() if title_file.exists() else "Untitled"
+
+    # Find the hit calling PDF
+    pdf_path = reports_dir / "hit_calling_report.pdf"
+    if not pdf_path.exists():
+        raise HTTPException(status_code=404, detail="Hit calling report not found")
+
+    # Extract text from PDF
+    pdf_sections = extract_hits_pdf_sections(pdf_path)
+
+    # Build response sections
+    sections = []
+    for section_def in HITS_SECTIONS:
+        # Find images matching the pattern
+        image_urls = []
+        for img_path in sorted(reports_dir.glob(section_def["image_pattern"])):
+            image_urls.append(f"/api/reports/{job_id}/image/{img_path.name}")
+
+        # Skip sections with no images
+        if not image_urls:
+            continue
+
+        pdf_heading = section_def.get("pdf_heading", section_def["title"])
+        sections.append({
+            "id": section_def["id"],
+            "title": section_def["title"],
+            "text": pdf_sections.get(pdf_heading, ""),
+            "image_urls": image_urls,
+        })
+
+    return {
+        "job_id": job_id,
+        "title": title,
+        "sections": sections,
+    }
+
+
+@router.get("/reports/{job_id}/hits/pdf")
+async def get_hits_pdf(job_id: str):
+    """Serve the hit calling PDF report."""
+    reports_dir = job_manager.get_reports_dir(job_id)
+    pdf_path = reports_dir / "hit_calling_report.pdf"
+
+    if not pdf_path.exists():
+        raise HTTPException(status_code=404, detail="Hit calling report PDF not found")
+
+    return FileResponse(
+        pdf_path,
+        media_type="application/pdf",
+        filename="hit_calling_report.pdf",
+    )
