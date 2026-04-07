@@ -115,15 +115,23 @@ async def get_report_image(job_id: str, filename: str):
 
 @router.get("/reports/{job_id}/pdf")
 async def get_report_pdf(job_id: str):
-    """Serve the PDF report."""
+    """Serve the initial QC PDF report."""
+    job_dir = job_manager.get_job_dir(job_id)
     reports_dir = job_manager.get_reports_dir(job_id)
 
-    # Find the PDF file (named after the job title)
-    pdf_files = list(reports_dir.glob("*.pdf"))
-    if not pdf_files:
-        raise HTTPException(status_code=404, detail="PDF report not found")
+    title_file = job_dir / "title.txt"
+    title = title_file.read_text().strip() if title_file.exists() else "Untitled"
 
-    pdf_path = pdf_files[0]
+    # Look for initial QC PDF
+    pdf_path = reports_dir / f"{title} initial qc.pdf"
+    if not pdf_path.exists():
+        for f in reports_dir.glob("*initial qc*.pdf"):
+            pdf_path = f
+            break
+
+    if not pdf_path.exists():
+        raise HTTPException(status_code=404, detail="Initial QC PDF report not found")
+
     return FileResponse(
         pdf_path,
         media_type="application/pdf",
@@ -242,12 +250,12 @@ async def get_chronos_qc_report(job_id: str):
     title = title_file.read_text().strip() if title_file.exists() else "Untitled"
 
     # Find the post-chronos PDF
-    pdf_name = f"{title}post chronos.pdf"
+    pdf_name = f"{title} chronos qc.pdf"
     pdf_path = reports_dir / pdf_name
 
     if not pdf_path.exists():
-        # Try to find any post chronos pdf
-        for f in reports_dir.glob("*post chronos*.pdf"):
+        # Try to find any chronos qc pdf
+        for f in reports_dir.glob("*chronos qc*.pdf"):
             pdf_path = f
             break
 
@@ -360,7 +368,12 @@ async def get_hits_report(job_id: str):
     title = title_file.read_text().strip() if title_file.exists() else "Untitled"
 
     # Find the hit calling PDF
-    pdf_path = reports_dir / "hit_calling_report.pdf"
+    pdf_path = reports_dir / f"{title} hits.pdf"
+    if not pdf_path.exists():
+        # Try to find any hits pdf
+        for f in reports_dir.glob("*hits*.pdf"):
+            pdf_path = f
+            break
     if not pdf_path.exists():
         raise HTTPException(status_code=404, detail="Hit calling report not found")
 
@@ -397,8 +410,17 @@ async def get_hits_report(job_id: str):
 @router.get("/reports/{job_id}/hits/pdf")
 async def get_hits_pdf(job_id: str):
     """Serve the hit calling PDF report."""
+    job_dir = job_manager.get_job_dir(job_id)
     reports_dir = job_manager.get_reports_dir(job_id)
-    pdf_path = reports_dir / "hit_calling_report.pdf"
+
+    title_file = job_dir / "title.txt"
+    title = title_file.read_text().strip() if title_file.exists() else "Untitled"
+
+    pdf_path = reports_dir / f"{title} hits.pdf"
+    if not pdf_path.exists():
+        for f in reports_dir.glob("*hits*.pdf"):
+            pdf_path = f
+            break
 
     if not pdf_path.exists():
         raise HTTPException(status_code=404, detail="Hit calling report PDF not found")
@@ -406,5 +428,136 @@ async def get_hits_pdf(job_id: str):
     return FileResponse(
         pdf_path,
         media_type="application/pdf",
-        filename="hit_calling_report.pdf",
+        filename=pdf_path.name,
+    )
+
+
+# Differential Dependency Report sections
+DD_SECTIONS = [
+    {
+        "id": "differential_dependency",
+        "title": "Differential Dependency",
+        "pdf_heading": "Differential Dependency",
+        "image_patterns": [
+            "differential_dependency_*.png",
+            "diffdep_up_genetea_enrichment_*.png",
+            "diffdep_down_genetea_enrichment_*.png",
+        ],
+    },
+]
+
+
+def extract_dd_pdf_sections(pdf_path: Path) -> dict[str, str]:
+    """Extract text sections from differential dependency report PDF."""
+    reader = PdfReader(pdf_path)
+    full_text = ""
+    for page in reader.pages:
+        full_text += page.extract_text() + "\n"
+
+    target_headings = ["Differential Dependency"]
+
+    heading_pattern = re.compile(
+        r'^([A-Z][A-Za-z0-9,\-\' ]{2,80})$',
+        re.MULTILINE
+    )
+
+    all_headings = [(m.start(), m.group(1).strip()) for m in heading_pattern.finditer(full_text)]
+
+    sections = {}
+    for target in target_headings:
+        target_match = re.search(re.escape(target), full_text, re.IGNORECASE)
+        if not target_match:
+            continue
+
+        start = target_match.end()
+        end = len(full_text)
+        for pos, heading_text in all_headings:
+            if pos > start and heading_text != target:
+                end = pos
+                break
+
+        text = full_text[start:end].strip()
+        text = re.sub(r'\n{3,}', '\n\n', text)
+        sections[target] = text
+
+    return sections
+
+
+@router.get("/reports/{job_id}/differential-dependency")
+async def get_dd_report(job_id: str):
+    """Get differential dependency report sections with text and images."""
+    job_dir = job_manager.get_job_dir(job_id)
+    if not job_dir.exists():
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    reports_dir = job_manager.get_reports_dir(job_id)
+    if not reports_dir.exists():
+        raise HTTPException(status_code=404, detail="Reports not found")
+
+    # Get job title
+    title_file = job_dir / "title.txt"
+    title = title_file.read_text().strip() if title_file.exists() else "Untitled"
+
+    # Find the differential dependency PDF
+    pdf_path = reports_dir / f"{title} differential dependency report.pdf"
+    if not pdf_path.exists():
+        for f in reports_dir.glob("*differential dependency*.pdf"):
+            pdf_path = f
+            break
+    if not pdf_path.exists():
+        raise HTTPException(status_code=404, detail="Differential dependency report not found")
+
+    # Extract text from PDF
+    pdf_sections = extract_dd_pdf_sections(pdf_path)
+
+    # Build response sections
+    sections = []
+    for section_def in DD_SECTIONS:
+        # Collect all images matching any of the patterns
+        image_urls = []
+        for pattern in section_def["image_patterns"]:
+            for img_path in sorted(reports_dir.glob(pattern)):
+                image_urls.append(f"/api/reports/{job_id}/image/{img_path.name}")
+
+        # Skip sections with no images
+        if not image_urls:
+            continue
+
+        pdf_heading = section_def.get("pdf_heading", section_def["title"])
+        sections.append({
+            "id": section_def["id"],
+            "title": section_def["title"],
+            "text": pdf_sections.get(pdf_heading, ""),
+            "image_urls": image_urls,
+        })
+
+    return {
+        "job_id": job_id,
+        "title": title,
+        "sections": sections,
+    }
+
+
+@router.get("/reports/{job_id}/differential-dependency/pdf")
+async def get_dd_pdf(job_id: str):
+    """Serve the differential dependency PDF report."""
+    job_dir = job_manager.get_job_dir(job_id)
+    reports_dir = job_manager.get_reports_dir(job_id)
+
+    title_file = job_dir / "title.txt"
+    title = title_file.read_text().strip() if title_file.exists() else "Untitled"
+
+    pdf_path = reports_dir / f"{title} differential dependency report.pdf"
+    if not pdf_path.exists():
+        for f in reports_dir.glob("*differential dependency*.pdf"):
+            pdf_path = f
+            break
+
+    if not pdf_path.exists():
+        raise HTTPException(status_code=404, detail="Differential dependency report PDF not found")
+
+    return FileResponse(
+        pdf_path,
+        media_type="application/pdf",
+        filename=pdf_path.name,
     )

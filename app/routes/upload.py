@@ -51,7 +51,7 @@ async def set_library(
 
     # Resume existing job or create new one
     if job_id:
-        job_manager.resume_job(job_id)
+        job_manager.resume_job(job_id, job_name)
     else:
         # No job_id provided means client is starting fresh - create new job
         job_manager.create_job(job_name)
@@ -91,7 +91,7 @@ async def upload_file(
 
     # Resume existing job or create new one
     if job_id:
-        job_manager.resume_job(job_id)
+        job_manager.resume_job(job_id, job_name)
     else:
         # No job_id provided means client is starting fresh - create new job
         job_manager.create_job(job_name)
@@ -122,6 +122,18 @@ async def upload_file(
             }
         else:
             df = parse_file(file_path, file_format)
+
+            # Extract available conditions from condition_map
+            if file_type == "condition_map" and "condition" in df.columns:
+                conditions = (
+                    df["condition"]
+                    .dropna()
+                    .loc[lambda x: x != "pDNA"]
+                    .unique()
+                    .tolist()
+                )
+                job_manager.set_available_conditions(conditions)
+
             return {
                 "status": "success",
                 "job_id": job_manager.current_job_id,
@@ -130,6 +142,11 @@ async def upload_file(
                 "rows": len(df),
                 "columns": len(df.columns),
             }
+    except UnicodeDecodeError:
+        raise HTTPException(
+            status_code=400,
+            detail="Error parsing file: Unable to read file as text. Did you select the wrong file format?"
+        )
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error parsing file: {str(e)}")
 

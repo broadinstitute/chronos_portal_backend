@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import json
 
-from .routes import upload, qc, reports, chronos_run
+from .routes import upload, qc, reports, chronos_run, differential_dependency
 from .services.connection_manager import manager
 from .services.job_manager import job_manager
 
@@ -28,6 +28,7 @@ app.include_router(upload.router, prefix="/api")
 app.include_router(qc.router, prefix="/api")
 app.include_router(reports.router, prefix="/api")
 app.include_router(chronos_run.router, prefix="/api")
+app.include_router(differential_dependency.router, prefix="/api")
 
 
 @app.websocket("/ws")

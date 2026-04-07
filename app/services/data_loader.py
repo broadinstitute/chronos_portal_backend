@@ -70,11 +70,21 @@ def auto_orient_readcounts(readcounts, guide_map, sequence_map):
         guides_in_rows = len(set(readcounts.index) & set(guide_map.sgrna))
         seqs_in_cols = len(set(readcounts.columns) & set(sequence_map.sequence_ID))
         if guides_in_rows and seqs_in_cols:
-            return readcounts.T
-        raise ValueError(
-            "Readcounts columns and indices do not match the "
-            "condition map sequence IDs and guide map sgRNAs provided"
-        )
+            readcounts = readcounts.T
+        else:
+            raise ValueError(
+                "Readcounts columns and indices do not match the "
+                "condition map sequence IDs and guide map sgRNAs provided"
+            )
+
+    missing_sgrnas = sorted(set(readcounts.columns) - set(guide_map.sgrna))
+    if missing_sgrnas:
+        raise ValueError(f"{len(missing_sgrnas)} sgrnas in readcounts missing from the guide map")
+
+    missing_sequences = sorted(set(readcounts.index) - set(sequence_map.sequence_ID))
+    if missing_sequences:
+        raise ValueError(f"{len(missing_sequences)} sequences in readcounts missing from the sequence map")
+
     return readcounts
 
 

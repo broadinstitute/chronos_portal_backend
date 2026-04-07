@@ -3,12 +3,14 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional
+import asyncio
 import traceback
 
 from ..services.job_manager import job_manager
 from ..services.connection_manager import manager
 from ..services.file_utils import parse_file
 from ..services.data_loader import load_crispr_data, load_controls
+from ..services.concurrency import matplotlib_lock
 
 router = APIRouter()
 
@@ -45,16 +47,17 @@ async def run_initial_qc(job_id: str, title: str):
         negative_control_sgrnas = guide_map[guide_map.gene.isin(negative_controls)].sgrna.unique()
         positive_control_sgrnas = guide_map[guide_map.gene.isin(positive_controls)].sgrna.unique()
 
-        with open(log_path, "w") as log_file:
+        def run_qc_report():
+            """Run QC report in thread, capturing output."""
             import contextlib
             import io
+            from chronos import reports
 
             output_capture = io.StringIO()
+            error = None
 
             try:
                 with contextlib.redirect_stdout(output_capture), contextlib.redirect_stderr(output_capture):
-                    from chronos import reports
-
                     reports.qc_initial_data(
                         readcounts=readcounts,
                         guide_map=guide_map,
@@ -63,14 +66,21 @@ async def run_initial_qc(job_id: str, title: str):
                         negative_control_sgrnas=negative_control_sgrnas,
                         directory=str(reports_dir),
                         title=title,
+                        report_name=f"{title} initial qc.pdf"
                     )
-
-                log_file.write(output_capture.getvalue())
-
             except Exception as e:
-                log_file.write(output_capture.getvalue())
+                error = e
+
+            return output_capture.getvalue(), error
+
+        async with matplotlib_lock:
+            output, error = await asyncio.to_thread(run_qc_report)
+
+        with open(log_path, "w") as log_file:
+            log_file.write(output)
+            if error:
                 log_file.write(f"\n\nERROR:\n{traceback.format_exc()}")
-                await manager.send_error(str(e), job_id)
+                await manager.send_error(str(error), job_id)
                 return
 
         job_manager.mark_qc_completed()
@@ -93,8 +103,6 @@ async def run_initial_qc(job_id: str, title: str):
 class QCRequest(BaseModel):
     job_id: Optional[str] = None
     title: Optional[str] = None
-    condition1: Optional[str] = None
-    condition2: Optional[str] = None
     use_pretrained: bool = True
 
 
@@ -118,71 +126,6 @@ async def start_qc(request: QCRequest = None):
 
     job_id = job_manager.current_job_id
     title = request.title if request and request.title else job_manager.get_title()
-
-    # Validate compare conditions if provided
-    if request and (request.condition1 or request.condition2):
-        # Both must be provided
-        if not request.condition1 or not request.condition2:
-            raise HTTPException(
-                status_code=400,
-                detail="Both conditions must be specified for comparison"
-            )
-
-        # Validate conditions exist in condition map
-        try:
-            condition_map_path = job_manager.get_file_path("condition_map")
-            condition_map = parse_file(
-                condition_map_path,
-                job_manager.get_file_format("condition_map")
-            )
-
-            # Check required columns for comparison
-            if not hasattr(condition_map, 'columns'):
-                raise HTTPException(
-                    status_code=400,
-                    detail="Condition map file could not be parsed as a table"
-                )
-
-            if "condition" not in condition_map.columns:
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Condition map must have a 'condition' column for comparison. Found columns: {list(condition_map.columns)}"
-                )
-            if "replicate" not in condition_map.columns:
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Condition map must have a 'replicate' column for comparison. Found columns: {list(condition_map.columns)}"
-                )
-
-            # Get unique conditions (excluding null/NaN values)
-            available_conditions = condition_map["condition"].dropna().unique().tolist()
-
-            # Check both conditions exist
-            if request.condition1 not in available_conditions:
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"'{request.condition1}' was not found in the condition map's conditions: {available_conditions}"
-                )
-            if request.condition2 not in available_conditions:
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"'{request.condition2}' was not found in the condition map's conditions: {available_conditions}"
-                )
-
-            # Run check_condition_map from chronos.hit_calling if available
-            try:
-                from chronos.hit_calling import check_condition_map
-                check_condition_map({"default": condition_map})
-            except ImportError:
-                pass
-
-        except HTTPException:
-            raise
-        except Exception as e:
-            print(f"[QC] Condition validation error: {traceback.format_exc()}", flush=True)
-            raise HTTPException(status_code=400, detail=f"Error validating conditions: {str(e)}")
-
-        job_manager.set_compare_conditions(request.condition1, request.condition2)
 
     # Save use_pretrained setting
     if request:

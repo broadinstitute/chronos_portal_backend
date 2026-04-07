@@ -18,6 +18,8 @@ from ..services.job_manager import job_manager
 from ..services.connection_manager import manager
 from ..services.file_utils import parse_file
 from ..services.data_loader import load_crispr_data, load_controls
+from ..services.concurrency import matplotlib_lock
+from ..services.logging_utils import send_log
 
 router = APIRouter()
 
@@ -231,16 +233,18 @@ async def run_post_chronos_qc(
             except Exception:
                 pass
 
-        await asyncio.to_thread(
-            chronos.reports.dataset_qc_report,
-            title=title + " post chronos",
-            data=str(output_dir),
-            positive_control_genes=positive_controls,
-            negative_control_genes=negative_controls,
-            copy_number=cn_for_report,
-            directory=str(reports_dir),
-            gene_effect_file=gene_effect_file,
-        )
+        async with matplotlib_lock:
+            await asyncio.to_thread(
+                chronos.reports.dataset_qc_report,
+                title=title + " Chronos QC",
+                report_name=f"{title} chronos qc.pdf",
+                data=str(output_dir),
+                positive_control_genes=positive_controls,
+                negative_control_genes=negative_controls,
+                copy_number=cn_for_report,
+                directory=str(reports_dir),
+                gene_effect_file=gene_effect_file,
+            )
         await send_log(job_id, "Dataset QC report generated.")
         await asyncio.sleep(0.1)
         await manager.send_status("qc_report_ready", "QC report ready", job_id)
@@ -315,18 +319,19 @@ async def run_hit_calling(
         await send_log(job_id, "Hit calling complete. Generating hit calling report...")
 
         # Generate hit calling report
-        await asyncio.to_thread(
-            chronos.reports.hit_calling_report,
-            title=title,
-            report_name="hit_calling_report.pdf",
-            directory=str(reports_dir),
-            gene_effect_file=str(output_dir / gene_effect_file),
-            p_value_file=str(output_dir / "pvalues.hdf5"),
-            frequentist_fdr_file=str(output_dir / "fdr_from_pvalues.hdf5"),
-            probability_file=str(output_dir / "probability_dependent.hdf5"),
-            bayesian_fdr_file=str(output_dir / "fdr_from_probabilities.hdf5"),
-            full_gene_effect_file=full_gene_effect_file
-        )
+        async with matplotlib_lock:
+            await asyncio.to_thread(
+                chronos.reports.hit_calling_report,
+                title=title,
+                report_name=f"{title} hits.pdf",
+                directory=str(reports_dir),
+                gene_effect_file=str(output_dir / gene_effect_file),
+                p_value_file=str(output_dir / "pvalues.hdf5"),
+                frequentist_fdr_file=str(output_dir / "fdr_from_pvalues.hdf5"),
+                probability_file=str(output_dir / "probability_dependent.hdf5"),
+                bayesian_fdr_file=str(output_dir / "fdr_from_probabilities.hdf5"),
+                full_gene_effect_file=full_gene_effect_file
+            )
         await send_log(job_id, "Hit calling report generated.")
         await asyncio.sleep(0.1)
         await manager.send_status("hits_report_ready", "Hits report ready", job_id)
@@ -340,96 +345,8 @@ async def run_hit_calling(
 
 
 # =============================================================================
-# Module 6: Differential Dependency
-# =============================================================================
-
-async def run_differential_dependency(
-    job_id: str,
-    readcounts,
-    condition_map,
-    guide_map,
-    negative_control_genes: list,
-    library_label: str,
-    condition1: str,
-    condition2: str,
-    csv_dir: Path,
-):
-    """Run condition comparison using ConditionComparison."""
-    import re
-    import traceback
-    from chronos.hit_calling import ConditionComparison
-
-    try:
-        await send_log(job_id, "")
-        await send_log(job_id, "=" * 60)
-        await send_log(job_id, "DIFFERENTIAL DEPENDENCY")
-        await send_log(job_id, "=" * 60)
-        await send_log(job_id, f"Comparing {condition1} vs {condition2}...")
-        await manager.send_status(
-            "running",
-            f"Running condition comparison: {condition1} vs {condition2}...",
-            job_id
-        )
-
-        await send_log(job_id, "Initializing ConditionComparison model...")
-        comparator = ConditionComparison(
-            readcounts={library_label: readcounts},
-            condition_map={library_label: condition_map},
-            guide_gene_map={library_label: guide_map},
-            negative_control_genes=negative_control_genes,
-        )
-
-        await send_log(job_id, "Training comparison models (this may take a while)...")
-        comparison_stats = await asyncio.to_thread(
-            comparator.compare_conditions,
-            (condition1, condition2)
-        )
-
-        # Save results
-        safe_c1 = re.sub(r'[^\w\-]', '_', condition1)
-        safe_c2 = re.sub(r'[^\w\-]', '_', condition2)
-        output_filename = f"condition_comparison_{safe_c1}_vs_{safe_c2}.csv"
-        output_path = csv_dir / output_filename
-        comparison_stats.to_csv(output_path)
-        await send_log(job_id, f"Saved comparison results to {output_filename}")
-
-        await send_log(job_id, "Condition comparison complete!")
-        await asyncio.sleep(0.1)
-        await manager.send_status(
-            "comparison_complete",
-            "Condition comparison complete!",
-            job_id,
-            {"comparison_file": output_filename}
-        )
-
-    except Exception as e:
-        error_msg = f"Condition comparison failed: {e}"
-        await send_log(job_id, f"ERROR: {error_msg}")
-        await send_log(job_id, traceback.format_exc())
-        await manager.send_error(error_msg, job_id)
-        await asyncio.sleep(0.5)
-
-
-# =============================================================================
 # Utility Functions
 # =============================================================================
-
-async def send_log(job_id: str, message: str):
-    """Append message to log file and send full log to client."""
-    log_path = job_manager.get_log_path(job_id)
-
-    with open(log_path, "a") as f:
-        f.write(message + "\n")
-        f.flush()
-
-    full_log = log_path.read_text()
-    await manager.broadcast({
-        "type": "log",
-        "job_id": job_id,
-        "log": full_log,
-    })
-    await asyncio.sleep(0)
-
 
 async def convert_hdf5_to_csv(hdf5_dir: Path, csv_dir: Path, job_id: str):
     """Convert all HDF5 files in a directory to CSV."""
@@ -496,24 +413,24 @@ async def run_chronos_analysis(job_id: str):
 
         # Mark Chronos as complete and send user to results
         job_manager.mark_chronos_completed()
-        await send_log(job_id, "Chronos analysis complete! Running post-processing in background...")
+        await send_log(job_id, "Chronos analysis complete! Running post-processing...")
         await asyncio.sleep(0.1)
         await manager.send_status(
             "chronos_complete",
             "Chronos analysis complete!",
             job_id,
-            {"output_dir": str(csv_dir)}
+            data={"output_dir": str(csv_dir)}
         )
 
-        # Setup for background tasks
+        # Setup for report generation (run sequentially - matplotlib is not thread-safe)
         reports_dir = job_manager.get_reports_dir(job_id)
         title_file = job_dir / "title.txt"
         title = title_file.read_text().strip() if title_file.exists() else job_id
         gene_effect_file = "gene_effect_corrected.hdf5" if corrected_gene_effect is not None else "gene_effect.hdf5"
         full_gene_effect_file = job_manager.get_full_gene_effect_file()
 
-        # Module 4: Post-Chronos QC (background)
-        asyncio.create_task(run_post_chronos_qc(
+        # Module 4: Post-Chronos QC
+        await run_post_chronos_qc(
             job_id,
             chronos_output_dir,
             reports_dir,
@@ -522,10 +439,10 @@ async def run_chronos_analysis(job_id: str):
             data["negative_controls"],
             data["copy_number_path"],
             gene_effect_file,
-        ))
+        )
 
-        # Module 5: Hit calling (background)
-        asyncio.create_task(run_hit_calling(
+        # Module 5: Hit calling
+        await run_hit_calling(
             job_id,
             gene_effect,
             data["negative_controls"],
@@ -535,24 +452,10 @@ async def run_chronos_analysis(job_id: str):
             reports_dir,
             title,
             gene_effect_file,
-            str(full_gene_effect_file)
+            str(full_gene_effect_file),
+        )
 
-        ))
-
-        # Module 6: Differential dependency (background, if conditions specified)
-        compare_conditions = job_manager.get_compare_conditions()
-        if compare_conditions and compare_conditions.get("condition1") and compare_conditions.get("condition2"):
-            asyncio.create_task(run_differential_dependency(
-                job_id,
-                data["readcounts"],
-                data["sequence_map"],
-                data["guide_map"],
-                data["negative_controls"],
-                job_manager.get_library_label(),
-                compare_conditions["condition1"],
-                compare_conditions["condition2"],
-                csv_dir,
-            ))
+        # Differential dependency is now triggered from the Results page via /api/run-differential-dependency
 
     except Exception as e:
         error_msg = traceback.format_exc()
@@ -584,12 +487,22 @@ async def start_chronos(request: ChronosRequest):
 
 @router.get("/outputs/{job_id}")
 async def list_outputs(job_id: str):
-    """List all CSV output files for a job from both ChronosOutput and CSVOutputs."""
+    """List all output files for a job from Reports, ChronosOutput, and CSVOutputs."""
     job_dir = job_manager.get_job_dir(job_id)
+    reports_dir = job_dir / "Reports"
     csv_dir = job_dir / "CSVOutputs"
     chronos_dir = job_dir / "ChronosOutput"
 
     files = []
+
+    # Include PDF reports
+    if reports_dir.exists():
+        for pdf_file in reports_dir.glob("*.pdf"):
+            files.append({
+                "name": pdf_file.name,
+                "size": pdf_file.stat().st_size,
+                "source": "Reports",
+            })
 
     if chronos_dir.exists():
         for csv_file in chronos_dir.glob("*.csv"):
@@ -619,7 +532,9 @@ async def download_output(job_id: str, filename: str, source: str = "CSVOutputs"
     """Download a single output file."""
     job_dir = job_manager.get_job_dir(job_id)
 
-    if source == "ChronosOutput":
+    if source == "Reports":
+        file_path = job_dir / "Reports" / filename
+    elif source == "ChronosOutput":
         file_path = job_dir / "ChronosOutput" / filename
     else:
         file_path = job_dir / "CSVOutputs" / filename
@@ -651,7 +566,9 @@ async def download_zip(job_id: str, request: DownloadRequest):
     zip_buffer = io.BytesIO()
     with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
         for file_info in request.files:
-            if file_info.source == "ChronosOutput":
+            if file_info.source == "Reports":
+                file_path = job_dir / "Reports" / file_info.name
+            elif file_info.source == "ChronosOutput":
                 file_path = job_dir / "ChronosOutput" / file_info.name
             else:
                 file_path = job_dir / "CSVOutputs" / file_info.name

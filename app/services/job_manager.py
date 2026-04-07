@@ -59,44 +59,60 @@ class JobManager:
 
         return job_id
 
-    def resume_job(self, job_id: str):
-        """Resume an existing job, recovering file paths from disk and config."""
+    def resume_job(self, job_id: str, job_name: str = None):
+        """Resume an existing job, or create a new one with client-provided job_id."""
         job_dir = self.jobs_dir / job_id
-        if not job_dir.exists():
-            # Job doesn't exist, create it
+        is_new_job = not job_dir.exists()
+
+        if is_new_job:
+            # Job doesn't exist, create it with provided name
             job_dir.mkdir(exist_ok=True)
             (job_dir / "Reports").mkdir(exist_ok=True)
             (job_dir / "uploads").mkdir(exist_ok=True)
 
+            self.current_title = job_name or "Untitled Analysis"
+            (job_dir / "title.txt").write_text(self.current_title)
+
+            # Initialize job config
+            self.job_config = {
+                "job_id": job_id,
+                "title": self.current_title,
+                "created_at": datetime.now().isoformat(),
+                "files": {},
+                "compare_conditions": None,
+            }
+            self.uploaded_files = {}
+        else:
+            # Recover title from file
+            title_file = job_dir / "title.txt"
+            if title_file.exists():
+                self.current_title = title_file.read_text().strip()
+            else:
+                self.current_title = "Untitled Analysis"
+
+            # Load config to get stored file paths
+            self._load_config()
+
+            # Recover uploaded files from config paths
+            self.uploaded_files = {}
+            for file_type, file_info in self.job_config.get("files", {}).items():
+                if file_info.get("path"):
+                    path = Path(file_info["path"])
+                    if path.exists():
+                        self.uploaded_files[file_type] = path
+
+            # Also scan uploads dir for any files not in config (backwards compatibility)
+            uploads_dir = job_dir / "uploads"
+            if uploads_dir.exists():
+                for file_path in uploads_dir.iterdir():
+                    if file_path.is_file():
+                        file_type = file_path.stem
+                        if file_type not in self.uploaded_files:
+                            self.uploaded_files[file_type] = file_path
+
         self.current_job_id = job_id
         self.current_job_dir = job_dir
-
-        # Recover title from file
-        title_file = job_dir / "title.txt"
-        if title_file.exists():
-            self.current_title = title_file.read_text().strip()
-        else:
-            self.current_title = "Untitled Analysis"
-
-        # Load config first to get stored file paths
-        self._load_config()
-
-        # Recover uploaded files from config paths (handles external files like libraries)
-        self.uploaded_files = {}
-        for file_type, file_info in self.job_config.get("files", {}).items():
-            if file_info.get("path"):
-                path = Path(file_info["path"])
-                if path.exists():
-                    self.uploaded_files[file_type] = path
-
-        # Also scan uploads dir for any files not in config (backwards compatibility)
-        uploads_dir = job_dir / "uploads"
-        if uploads_dir.exists():
-            for file_path in uploads_dir.iterdir():
-                if file_path.is_file():
-                    file_type = file_path.stem
-                    if file_type not in self.uploaded_files:
-                        self.uploaded_files[file_type] = file_path
+        self._save_config()
 
     def get_title(self) -> str:
         return self.current_title or "Untitled Analysis"
@@ -216,6 +232,15 @@ class JobManager:
     def get_use_pretrained(self) -> bool:
         """Get whether to use pretrained parameters. Returns True by default."""
         return self.job_config.get("use_pretrained", True)
+
+    def set_available_conditions(self, conditions: list):
+        """Set available conditions extracted from condition_map."""
+        self.job_config["available_conditions"] = conditions
+        self._save_config()
+
+    def get_available_conditions(self) -> list:
+        """Get available conditions. Returns empty list if not set."""
+        return self.job_config.get("available_conditions", [])
 
 
 job_manager = JobManager()
