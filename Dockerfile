@@ -28,7 +28,7 @@ RUN pip install --no-cache-dir --no-deps git+https://github.com/broadinstitute/c
 # Install FastAPI server dependencies
 RUN pip install --no-cache-dir \
     fastapi==0.135.2 \
-    uvicorn==0.42.0 \
+    "uvicorn[standard]==0.42.0" \
     python-multipart==0.0.22 \
     pypdf==6.9.2
 
