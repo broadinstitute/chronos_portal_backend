@@ -37,6 +37,18 @@ async def list_jobs():
 
     return {"jobs": jobs}
 
+
+@router.get("/jobs/{job_id}/log")
+async def get_job_log(job_id: str):
+    """Get the log file content for a job."""
+    log_path = job_manager.get_log_path(job_id)
+
+    if not log_path.exists():
+        return {"job_id": job_id, "log": ""}
+
+    return {"job_id": job_id, "log": log_path.read_text()}
+
+
 SECTIONS = [
     {
         "id": "lfc_distribution",

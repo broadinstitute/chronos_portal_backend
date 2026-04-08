@@ -234,6 +234,8 @@ async def run_post_chronos_qc(
                 pass
 
         async with matplotlib_lock:
+            import matplotlib.pyplot as plt
+            plt.close('all')  # Clear stale figures
             await asyncio.to_thread(
                 chronos.reports.dataset_qc_report,
                 title=title + " Chronos QC",
@@ -320,6 +322,8 @@ async def run_hit_calling(
 
         # Generate hit calling report
         async with matplotlib_lock:
+            import matplotlib.pyplot as plt
+            plt.close('all')  # Clear stale figures
             await asyncio.to_thread(
                 chronos.reports.hit_calling_report,
                 title=title,

@@ -90,6 +90,9 @@ class JobManager:
             else:
                 self.current_title = "Untitled Analysis"
 
+            # Set job dir before loading config (needed for _get_config_path)
+            self.current_job_dir = job_dir
+
             # Load config to get stored file paths
             self._load_config()
 

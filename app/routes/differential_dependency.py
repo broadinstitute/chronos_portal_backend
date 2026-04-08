@@ -88,6 +88,8 @@ async def run_differential_dependency(
         await run_differential_dependency_report(
             job_id=job_id,
             title=title,
+            condition1=condition1,
+            condition2=condition2,
             stats_file=output_path,
             reports_dir=reports_dir,
         )
@@ -107,6 +109,8 @@ async def run_differential_dependency(
 async def run_differential_dependency_report(
     job_id: str,
     title: str,
+    condition1: str,
+    condition2: str,
     stats_file: Path,
     reports_dir: Path,
 ):
@@ -121,11 +125,13 @@ async def run_differential_dependency_report(
 
         await send_log(job_id, "Generating differential dependency report...")
         async with matplotlib_lock:
+            import matplotlib.pyplot as plt
+            plt.close('all')  # Clear stale figures to prevent wrong images being saved
             await asyncio.to_thread(
                 reports.differential_dependency_report,
                 title=title,
                 stats_file=str(stats_file),
-                report_name=f"{title} differential dependency report.pdf",
+                report_name=f"{title} {condition1} vs {condition2} differential dependency report.pdf",
                 directory=str(reports_dir),
             )
         await send_log(job_id, "Differential dependency report complete!")

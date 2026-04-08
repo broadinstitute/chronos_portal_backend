@@ -4,6 +4,4 @@ Logs/*
 __pycache__/*
 *DS_store
 *DS_Store
-**/data/controls/*
-**/data/guide_maps/*
 **/DepMapData/*

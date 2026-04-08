@@ -74,6 +74,8 @@ async def run_initial_qc(job_id: str, title: str):
             return output_capture.getvalue(), error
 
         async with matplotlib_lock:
+            import matplotlib.pyplot as plt
+            plt.close('all')  # Clear stale figures
             output, error = await asyncio.to_thread(run_qc_report)
 
         with open(log_path, "w") as log_file:
