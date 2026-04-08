@@ -2,6 +2,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import json
+import os
 
 from .routes import upload, qc, reports, chronos_run, differential_dependency
 from .services.connection_manager import manager
@@ -16,9 +17,11 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Chronos Analysis Portal", lifespan=lifespan)
 
+cors_origins = os.environ.get("CORS_ORIGINS", "http://localhost:5173").split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
