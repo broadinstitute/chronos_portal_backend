@@ -19,7 +19,7 @@ from ..services.connection_manager import manager
 from ..services.file_utils import parse_file
 from ..services.data_loader import load_crispr_data, load_controls
 from ..services.concurrency import matplotlib_lock
-from ..services.logging_utils import send_log
+from ..services.logging_utils import send_log, send_error
 
 router = APIRouter()
 
@@ -118,10 +118,7 @@ async def train_chronos(job_id: str, data: dict, output_dir: Path, csv_dir: Path
             await asyncio.sleep(0.5)
             await send_log(job_id, "Pretrained parameters loaded successfully.")
         except Exception as e:
-            error_msg = f"Failed to load pretrained parameters: {e}"
-            await send_log(job_id, error_msg)
-            await manager.send_error(error_msg, job_id)
-            await asyncio.sleep(0.5)
+            await send_error(job_id, e, "Loading pretrained parameters")
             raise
 
     # Train
@@ -192,10 +189,8 @@ async def apply_copy_number_correction(
         return corrected
 
     except Exception as e:
-        error_msg = f"Copy number correction failed: {e}.\nAnalysis will proceed with uncorrected data."
-        await send_log(job_id, error_msg)
-        await manager.send_error(error_msg, job_id)
-        await asyncio.sleep(0.5)
+        await send_error(job_id, e, "Copy number correction")
+        await send_log(job_id, "Analysis will proceed with uncorrected data.")
         return None
 
 
@@ -215,7 +210,6 @@ async def run_post_chronos_qc(
 ):
     """Generate post-Chronos QC report in background."""
     import chronos.reports
-    import traceback
 
     try:
         await send_log(job_id, "Generating dataset QC report...")
@@ -252,11 +246,7 @@ async def run_post_chronos_qc(
         await manager.send_status("qc_report_ready", "QC report ready", job_id)
 
     except Exception as e:
-        error_msg = f"Dataset QC report failed: {e}"
-        await send_log(job_id, error_msg)
-        await send_log(job_id, traceback.format_exc())
-        await manager.send_error(error_msg, job_id)
-        await asyncio.sleep(0.5)
+        await send_error(job_id, e, "Dataset QC report")
 
 
 # =============================================================================
@@ -278,7 +268,6 @@ async def run_hit_calling(
     """Compute dependency statistics, save results, and generate report."""
     import chronos
     import chronos.reports
-    import traceback
     from chronos.hit_calling import (
         get_probability_dependent, get_fdr_from_probabilities,
         get_pvalue_dependent, get_fdr_from_pvalues
@@ -341,11 +330,7 @@ async def run_hit_calling(
         await manager.send_status("hits_report_ready", "Hits report ready", job_id)
 
     except Exception as e:
-        error_msg = f"Hit calling failed: {e}"
-        await send_log(job_id, f"ERROR: {error_msg}")
-        await send_log(job_id, traceback.format_exc())
-        await manager.send_error(error_msg, job_id)
-        await asyncio.sleep(0.5)
+        await send_error(job_id, e, "Hit calling")
 
 
 # =============================================================================
@@ -366,9 +351,7 @@ async def convert_hdf5_to_csv(hdf5_dir: Path, csv_dir: Path, job_id: str):
             df.to_csv(csv_path)
             await send_log(job_id, f"Converted {hdf5_file.name} -> {csv_path.name}")
         except Exception as e:
-            error_msg = f"Failed to convert {hdf5_file.name}: {e}"
-            await send_log(job_id, error_msg)
-            await manager.send_error(error_msg, job_id)
+            await send_error(job_id, e, f"Converting {hdf5_file.name}")
 
 
 # =============================================================================
@@ -377,18 +360,10 @@ async def convert_hdf5_to_csv(hdf5_dir: Path, csv_dir: Path, job_id: str):
 
 async def run_chronos_analysis(job_id: str):
     """Main orchestrator for Chronos analysis pipeline."""
-    import traceback
-
-    log_path = job_manager.get_log_path(job_id)
-
-    def append_log(message: str):
-        with open(log_path, "a") as f:
-            f.write(str(message) + "\n")
-
     try:
-        append_log("\n" + "=" * 60)
-        append_log("CHRONOS ANALYSIS")
-        append_log("=" * 60 + "\n")
+        await send_log(job_id, "\n" + "=" * 60)
+        await send_log(job_id, "CHRONOS ANALYSIS")
+        await send_log(job_id, "=" * 60 + "\n")
 
         job_manager.mark_chronos_started()
         await manager.send_status("running", "Starting Chronos analysis...", job_id)
@@ -462,11 +437,7 @@ async def run_chronos_analysis(job_id: str):
         # Differential dependency is now triggered from the Results page via /api/run-differential-dependency
 
     except Exception as e:
-        error_msg = traceback.format_exc()
-        await send_log(job_id, f"ERROR: {error_msg}")
-        await manager.send_error(str(e), job_id)
-        append_log(str(e))
-        await asyncio.sleep(0.5)
+        await send_error(job_id, e, "Chronos analysis")
 
 
 # =============================================================================
@@ -524,6 +495,26 @@ async def list_outputs(job_id: str):
                 "source": "CSVOutputs",
             })
 
+    # Include PoolQ outputs (for sequence format jobs)
+    poolq_dir = job_dir / "uploads" / "poolq_work"
+    if poolq_dir.exists():
+        for poolq_file in poolq_dir.glob("*"):
+            if poolq_file.is_file():
+                files.append({
+                    "name": poolq_file.name,
+                    "size": poolq_file.stat().st_size,
+                    "source": "PoolQ",
+                })
+
+    # Include readcounts.csv from uploads (PoolQ output)
+    readcounts_file = job_dir / "uploads" / "readcounts.csv"
+    if readcounts_file.exists():
+        files.append({
+            "name": "readcounts.csv",
+            "size": readcounts_file.stat().st_size,
+            "source": "PoolQ",
+        })
+
     if not files:
         raise HTTPException(status_code=404, detail="No outputs found")
 
@@ -540,6 +531,11 @@ async def download_output(job_id: str, filename: str, source: str = "CSVOutputs"
         file_path = job_dir / "Reports" / filename
     elif source == "ChronosOutput":
         file_path = job_dir / "ChronosOutput" / filename
+    elif source == "PoolQ":
+        # Check poolq_work first, then uploads for readcounts.csv
+        file_path = job_dir / "uploads" / "poolq_work" / filename
+        if not file_path.exists():
+            file_path = job_dir / "uploads" / filename
     else:
         file_path = job_dir / "CSVOutputs" / filename
 
@@ -574,6 +570,10 @@ async def download_zip(job_id: str, request: DownloadRequest):
                 file_path = job_dir / "Reports" / file_info.name
             elif file_info.source == "ChronosOutput":
                 file_path = job_dir / "ChronosOutput" / file_info.name
+            elif file_info.source == "PoolQ":
+                file_path = job_dir / "uploads" / "poolq_work" / file_info.name
+                if not file_path.exists():
+                    file_path = job_dir / "uploads" / file_info.name
             else:
                 file_path = job_dir / "CSVOutputs" / file_info.name
 

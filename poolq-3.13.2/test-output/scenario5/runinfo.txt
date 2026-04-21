@@ -1,0 +1,21 @@
+PoolQ version: 3.13.2
+PoolQ command-line settings:
+  --row-reference Reference.csv \
+  --col-reference Conditions.csv \
+  --row-reads scenario5.1.sam \
+  --col-reads scenario5.barcode_1.sam \
+  --read-id-check-policy strict \
+  --row-matcher mismatch \
+  --col-matcher exact \
+  --row-barcode-policy PREFIX:CACCG@18 \
+  --col-barcode-policy FIXED@0 \
+  --unexpected-sequence-threshold 100 \
+  --compat \
+  --counts counts.txt \
+  --normalized-counts lognormalized-counts.txt \
+  --barcode-counts barcode-counts.txt \
+  --quality quality.txt \
+  --correlation correlation.txt \
+  --unexpected-sequences unexpected-sequences.txt \
+  --run-info runinfo.txt
+

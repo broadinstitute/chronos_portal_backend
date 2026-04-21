@@ -1,0 +1,21 @@
+PoolQ version: 3.13.2
+PoolQ command-line settings:
+  --row-reference reference.csv \
+  --col-reference conditions.csv \
+  --row-reads AGAATGAG:AGAATGAG.1.construct.fastq,ATCCGTCC:ATCCGTCC.1.construct.fastq,CAGGCATA:CAGGCATA.1.construct.fastq,CGTCTTGG:CGTCTTGG.1.construct.fastq,GAACAAAG:GAACAAAG.1.construct.fastq,TCTGGACT:TCTGGACT.1.construct.fastq \
+  --rev-row-reads AGAATGAG:AGAATGAG.2.construct.fastq,ATCCGTCC:ATCCGTCC.2.construct.fastq,CAGGCATA:CAGGCATA.2.construct.fastq,CGTCTTGG:CGTCTTGG.2.construct.fastq,GAACAAAG:GAACAAAG.2.construct.fastq,TCTGGACT:TCTGGACT.2.construct.fastq \
+  --read-id-check-policy strict \
+  --row-matcher mismatch \
+  --col-matcher exact \
+  --row-barcode-policy PREFIX:CACCG@11 \
+  --rev-row-barcode-policy PREFIX:CGGTG@11 \
+  --unexpected-sequence-threshold 100 \
+  --compat \
+  --counts counts.txt \
+  --normalized-counts lognormalized-counts.txt \
+  --barcode-counts barcode-counts.txt \
+  --quality quality.txt \
+  --correlation correlation.txt \
+  --unexpected-sequences unexpected-sequences.txt \
+  --run-info runinfo.txt
+

@@ -37,6 +37,26 @@ def load_crispr_data(job_id: str):
         condition_map_path,
         job_manager.get_file_format("condition_map")
     )
+    for col in ["sequence_ID", "cell_line_name", "days", "pDNA_batch"]:
+        if not col in sequence_map:
+            raise KeyError(f"condition map missing required column {col}. Found columns {', '.join[sequence_map.columns]}")
+    used_cols = [
+        col
+        for col in ["sequence_ID", "cell_line_name", "days", "pDNA_batch", "replicate", "condition"]
+        if col in sequence_map
+    ]
+    sequence_map = sequence_map[used_cols].drop_duplicates()
+    null_cols = sequence_map[["sequence_ID", "cell_line_name", "pDNA_batch"]].isnull().any().loc[lambda x: x].index
+    if len(null_cols):
+        raise ValueError(f"condition map cannot have null values for {', '.join(null_cols)}")
+    if sequence_map.sequence_ID.duplicated().any():
+        raise ValueError(
+            f"condition map has duplicated sequence IDs: {', '.join(sequence_map.sequence_ID[sequence_map.sequence_ID.duplicated()].values)}",
+            "If you have multiple rows with the same sequence IDs, they must have the same cell line name, pDNA batch, days, and "
+            "condition and replicate (if present)"
+        )
+
+
     guide_map = parse_file(
         guide_map_path,
         job_manager.get_file_format("guide_map")
@@ -47,6 +67,7 @@ def load_crispr_data(job_id: str):
         raise KeyError("guide_map missing required column 'sgrna'")
     if "sequence_ID" not in sequence_map:
         raise KeyError("condition_map missing required column 'sequence_ID'")
+
 
     # Auto-transpose if needed
     readcounts = auto_orient_readcounts(readcounts, guide_map, sequence_map)

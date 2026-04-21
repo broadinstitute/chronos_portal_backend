@@ -6,12 +6,11 @@ from pathlib import Path
 from typing import Optional
 import asyncio
 import re
-import traceback
 
 from ..services.job_manager import job_manager
 from ..services.connection_manager import manager
 from ..services.concurrency import matplotlib_lock
-from ..services.logging_utils import send_log
+from ..services.logging_utils import send_log, send_error
 from ..services.file_utils import parse_file
 from ..services.data_loader import load_crispr_data, load_controls
 
@@ -95,11 +94,7 @@ async def run_differential_dependency(
         )
 
     except Exception as e:
-        error_msg = f"Condition comparison failed: {e}"
-        await send_log(job_id, f"ERROR: {error_msg}")
-        await send_log(job_id, traceback.format_exc())
-        await manager.send_error(error_msg, job_id)
-        await asyncio.sleep(0.5)
+        await send_error(job_id, e, "Condition comparison")
 
 
 # =============================================================================
@@ -139,11 +134,7 @@ async def run_differential_dependency_report(
         await manager.send_status("dd_report_ready", "Differential dependency report ready", job_id)
 
     except Exception as e:
-        error_msg = f"Differential dependency report failed: {e}"
-        await send_log(job_id, f"ERROR: {error_msg}")
-        await send_log(job_id, traceback.format_exc())
-        await manager.send_error(error_msg, job_id)
-        await asyncio.sleep(0.5)
+        await send_error(job_id, e, "Differential dependency report")
 
 
 # =============================================================================

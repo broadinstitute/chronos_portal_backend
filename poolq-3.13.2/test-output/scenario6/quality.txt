@@ -1,0 +1,24 @@
+Total reads: 2000
+Matching reads: 2000
+1-base mismatch reads: 0
+
+Overall % match: 100.00
+
+Reads with no construct barcode: 0
+Max construct barcode index: 20
+Min construct barcode index: 17
+Avg construct barcode index: 18.48
+
+Read counts for sample barcodes with associated conditions:
+Barcode	Condition	Matched (Construct+Sample Barcode)	Matched Sample Barcode	% Match	Normalized Match
+CACGCG	F03	256	256	100.00	16.966
+CATACG	G02	220	220	100.00	16.747
+CTAGCG	G02	250	250	100.00	16.932
+CTCCGC	F10	256	256	100.00	16.966
+CTGCGA	C07	243	243	100.00	16.891
+GAGCGA	H03	233	233	100.00	16.830
+GGGGCA	G08	266	266	100.00	17.021
+GTACTC	B02	276	276	100.00	17.074
+
+Read counts for most common sample barcodes without associated conditions:
+

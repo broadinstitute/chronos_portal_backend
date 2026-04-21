@@ -1,0 +1,38 @@
+Total reads: 1000
+Matching reads: 1000
+1-base mismatch reads: 0
+
+Overall % match: 100.00
+
+Reads with no construct barcode: 0
+Max construct barcode index: 30
+Min construct barcode index: 23
+Avg construct barcode index: 26.45
+
+Read counts for sample barcodes with associated conditions:
+Barcode	Condition	Matched (Construct+Sample Barcode)	Matched Sample Barcode	% Match	Normalized Match
+TTGAACCG	pDNA	46	46	100.00	15.489
+CCGAGTTA	pDNA	45	45	100.00	15.458
+TTGAGTAT	Day 1 + Drug	44	44	100.00	15.425
+CCTCCAAT	Day 1 + Drug	49	49	100.00	15.581
+GGTCACCG	Day 1 - Drug	41	41	100.00	15.323
+TTGACAAT	Day 1 - Drug	38	38	100.00	15.214
+AATCCAAT	Day 2 + Drug	46	46	100.00	15.489
+TTCTCATA	Day 2 + Drug	47	47	100.00	15.520
+AATCCACG	Day 2 - Drug	52	52	100.00	15.666
+AATCGTGC	Day 2 - Drug	53	53	100.00	15.694
+AAGAACTA	Day 4 + Drug	45	45	100.00	15.458
+CCAGTGAT	Day 4 + Drug	41	41	100.00	15.323
+GGTCGTGC	Day 4 - Drug	46	46	100.00	15.489
+TTAGACCG	Day 4 - Drug	44	44	100.00	15.425
+GGTCCACG	Day 8 + Drug	48	48	100.00	15.551
+CCGAACTA	Day 8 + Drug	39	39	100.00	15.251
+AACTCACG	Day 8 - Drug	32	32	100.00	14.966
+AATCACTA	Day 8 - Drug	52	52	100.00	15.666
+GGTCCATA	Day 16 + Drug	43	43	100.00	15.392
+GGTCTGCG	Day 16 + Drug	54	54	100.00	15.721
+CCAGTGGC	Day 16 - Drug	48	48	100.00	15.551
+AACTTGCG	Day 16 - Drug	47	47	100.00	15.520
+
+Read counts for most common sample barcodes without associated conditions:
+

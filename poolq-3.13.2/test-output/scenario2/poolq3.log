@@ -1,0 +1,37 @@
+INFO 2026-04-09 10:08:56,603 o.b.g.p.PoolQ - PoolQ version: 3.13.2
+INFO 2026-04-09 10:08:56,626 o.b.g.p.PoolQ - PoolQ command-line settings:
+--row-reference Reference.csv \
+--col-reference Conditions.csv \
+--reads scenario2.fastq \
+--read-id-check-policy strict \
+--row-matcher mismatch \
+--col-matcher exact \
+--row-barcode-policy PREFIX:CACCG@18 \
+--col-barcode-policy FIXED@0 \
+--unexpected-sequence-threshold 100 \
+--compat \
+--counts counts.txt \
+--normalized-counts lognormalized-counts.txt \
+--barcode-counts barcode-counts.txt \
+--quality quality.txt \
+--correlation correlation.txt \
+--unexpected-sequences unexpected-sequences.txt \
+--run-info runinfo.txt
+INFO 2026-04-09 10:08:56,626 o.b.g.p.PoolQ - Reading row reference data
+INFO 2026-04-09 10:08:56,659 o.b.g.p.PoolQ - Reading column reference data
+INFO 2026-04-09 10:08:56,660 o.b.g.p.PoolQ - Reading global reference data
+INFO 2026-04-09 10:08:56,664 o.b.g.p.PoolQ - Building row reference
+INFO 2026-04-09 10:08:56,689 o.b.g.p.PoolQ - Building column reference
+INFO 2026-04-09 10:08:56,714 o.b.g.p.PoolQ - Writing unexpected sequence cache files to /var/folders/zv/1d_rb7m137n205fmdmc2fy700000gq/T/unexpected-sequence-cache6410822823004685532
+INFO 2026-04-09 10:08:56,727 o.b.g.p.p.PoolQProcess - Beginning task processing.
+INFO 2026-04-09 10:08:56,738 o.b.g.p.p.PoolQProcess - Shutting down.
+INFO 2026-04-09 10:08:56,739 o.b.g.p.p.PoolQProcess - Processed 1,000 reads in 10 ms (100.0 reads/ms). Match percent: 100.0; queue size: 0
+INFO 2026-04-09 10:08:56,837 o.b.g.p.PoolQ - Writing counts file counts.txt
+INFO 2026-04-09 10:08:56,872 o.b.g.p.PoolQ - Writing quality file quality.txt
+INFO 2026-04-09 10:08:56,886 o.b.g.p.PoolQ - Writing log-normalized counts file lognormalized-counts.txt
+INFO 2026-04-09 10:08:56,905 o.b.g.p.PoolQ - Writing barcode counts file barcode-counts.txt
+INFO 2026-04-09 10:08:56,909 o.b.g.p.PoolQ - Writing correlation file correlation.txt
+INFO 2026-04-09 10:08:56,923 o.b.g.p.PoolQ - Writing unexpected sequence report unexpected-sequences.txt
+INFO 2026-04-09 10:08:56,942 o.b.g.p.PoolQ - Removing unexpected sequence cache None
+INFO 2026-04-09 10:08:56,945 o.b.g.p.PoolQ - Writing run info unexpected-sequences.txt
+INFO 2026-04-09 10:08:56,947 o.b.g.p.PoolQ - PoolQ complete

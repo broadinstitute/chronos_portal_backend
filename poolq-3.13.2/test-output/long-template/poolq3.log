@@ -1,0 +1,38 @@
+INFO 2026-04-09 10:09:00,268 o.b.g.p.PoolQ - PoolQ version: 3.13.2
+INFO 2026-04-09 10:09:00,291 o.b.g.p.PoolQ - PoolQ command-line settings:
+--row-reference reference.csv \
+--col-reference conditions.csv \
+--row-reads long-template.fastq \
+--col-reads long-template.barcode_1.fastq \
+--read-id-check-policy strict \
+--row-matcher mismatch \
+--col-matcher exact \
+--row-barcode-policy TEMPLATE:caccgNNNNNNNNNNNNNNNNNNNNnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnNNNNNNNNNNNNNNNNNNNN@12 \
+--col-barcode-policy FIXED@0 \
+--unexpected-sequence-threshold 100 \
+--compat \
+--counts counts.txt \
+--normalized-counts lognormalized-counts.txt \
+--barcode-counts barcode-counts.txt \
+--quality quality.txt \
+--correlation correlation.txt \
+--unexpected-sequences unexpected-sequences.txt \
+--run-info runinfo.txt
+INFO 2026-04-09 10:09:00,292 o.b.g.p.PoolQ - Reading row reference data
+INFO 2026-04-09 10:09:00,348 o.b.g.p.PoolQ - Reading column reference data
+INFO 2026-04-09 10:09:00,350 o.b.g.p.PoolQ - Reading global reference data
+INFO 2026-04-09 10:09:00,365 o.b.g.p.PoolQ - Building row reference
+INFO 2026-04-09 10:09:00,401 o.b.g.p.PoolQ - Building column reference
+INFO 2026-04-09 10:09:00,427 o.b.g.p.PoolQ - Writing unexpected sequence cache files to /var/folders/zv/1d_rb7m137n205fmdmc2fy700000gq/T/unexpected-sequence-cache7864143304762207010
+INFO 2026-04-09 10:09:00,439 o.b.g.p.p.PoolQProcess - Beginning task processing.
+INFO 2026-04-09 10:09:00,493 o.b.g.p.p.PoolQProcess - Shutting down.
+INFO 2026-04-09 10:09:00,493 o.b.g.p.p.PoolQProcess - Processed 2,000 reads in 53 ms (37.735847 reads/ms). Match percent: 100.0; queue size: 0
+INFO 2026-04-09 10:09:00,548 o.b.g.p.PoolQ - Writing counts file counts.txt
+INFO 2026-04-09 10:09:00,565 o.b.g.p.PoolQ - Writing quality file quality.txt
+INFO 2026-04-09 10:09:00,580 o.b.g.p.PoolQ - Writing log-normalized counts file lognormalized-counts.txt
+INFO 2026-04-09 10:09:00,594 o.b.g.p.PoolQ - Writing barcode counts file barcode-counts.txt
+INFO 2026-04-09 10:09:00,599 o.b.g.p.PoolQ - Writing correlation file correlation.txt
+INFO 2026-04-09 10:09:00,611 o.b.g.p.PoolQ - Writing unexpected sequence report unexpected-sequences.txt
+INFO 2026-04-09 10:09:00,625 o.b.g.p.PoolQ - Removing unexpected sequence cache None
+INFO 2026-04-09 10:09:00,627 o.b.g.p.PoolQ - Writing run info unexpected-sequences.txt
+INFO 2026-04-09 10:09:00,628 o.b.g.p.PoolQ - PoolQ complete

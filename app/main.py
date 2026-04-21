@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 import json
 import os
 
-from .routes import upload, qc, reports, chronos_run, differential_dependency
+from .routes import upload, qc, reports, chronos_run, differential_dependency, preprocessing
 from .services.connection_manager import manager
 from .services.job_manager import job_manager
 
@@ -28,6 +28,7 @@ app.add_middleware(
 )
 
 app.include_router(upload.router, prefix="/api")
+app.include_router(preprocessing.router, prefix="/api")
 app.include_router(qc.router, prefix="/api")
 app.include_router(reports.router, prefix="/api")
 app.include_router(chronos_run.router, prefix="/api")
@@ -43,6 +44,8 @@ async def websocket_endpoint(websocket: WebSocket):
             message = json.loads(data)
             if message.get("type") == "ping":
                 await websocket.send_json({"type": "pong"})
+            elif message.get("type") == "ack" and message.get("msg_id"):
+                manager.acknowledge(message["msg_id"])
     except WebSocketDisconnect:
         manager.disconnect(websocket)
 

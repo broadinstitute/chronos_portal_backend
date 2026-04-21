@@ -245,5 +245,66 @@ class JobManager:
         """Get available conditions. Returns empty list if not set."""
         return self.job_config.get("available_conditions", [])
 
+    # --- Multi-file readcount support ---
+
+    def add_readcount_file(self, file_path: Path):
+        """Add a readcount file to the list of readcount files."""
+        if "readcount_files" not in self.job_config:
+            self.job_config["readcount_files"] = []
+        self.job_config["readcount_files"].append(str(file_path))
+        self._save_config()
+
+    def get_readcount_files(self) -> list[Path]:
+        """Get list of all readcount file paths."""
+        paths = self.job_config.get("readcount_files", [])
+        return [Path(p) for p in paths]
+
+    def get_readcount_count(self) -> int:
+        """Get count of readcount files."""
+        return len(self.job_config.get("readcount_files", []))
+
+    def clear_readcount_files(self):
+        """Clear the list of readcount files."""
+        self.job_config["readcount_files"] = []
+        self._save_config()
+
+    def set_readcount_format(self, file_format: str):
+        """Set the format for readcount files (csv/tsv/hdf5/fastq/bam/sam)."""
+        self.job_config["readcount_format"] = file_format
+        self._save_config()
+
+    def get_readcount_format(self) -> str:
+        """Get the readcount file format. Returns 'csv' if not set."""
+        return self.job_config.get("readcount_format", "csv")
+
+    def is_sequence_format(self) -> bool:
+        """Check if readcount format is a raw sequencing format."""
+        return self.get_readcount_format() in {"fastq", "bam", "sam"}
+
+    def set_readcount_options(self, options: dict):
+        """Store sequence format options for raw reads processing."""
+        self.job_config["readcount_options"] = options
+        self._save_config()
+
+    def get_readcount_options(self) -> dict:
+        """Get sequence format options. Returns empty dict if not set."""
+        return self.job_config.get("readcount_options", {})
+
+    def mark_preprocessing_started(self):
+        """Mark preprocessing as started in job config."""
+        from datetime import datetime
+        self.job_config["preprocessing_started_at"] = datetime.now().isoformat()
+        self._save_config()
+
+    def mark_preprocessing_complete(self):
+        """Mark preprocessing as completed in job config."""
+        from datetime import datetime
+        self.job_config["preprocessing_completed_at"] = datetime.now().isoformat()
+        self._save_config()
+
+    def is_preprocessing_complete(self) -> bool:
+        """Check if preprocessing has been completed."""
+        return "preprocessing_completed_at" in self.job_config
+
 
 job_manager = JobManager()

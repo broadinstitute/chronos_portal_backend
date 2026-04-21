@@ -4,31 +4,29 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 import asyncio
-import traceback
 
 from ..services.job_manager import job_manager
 from ..services.connection_manager import manager
-from ..services.file_utils import parse_file
 from ..services.data_loader import load_crispr_data, load_controls
 from ..services.concurrency import matplotlib_lock
+from ..services.logging_utils import send_log, send_error
+from ..services.validation import (
+    validate_preprocessing_complete,
+    validate_required_files,
+)
 
 router = APIRouter()
 
 
 async def run_initial_qc(job_id: str, title: str):
-    import asyncio
-
-    log_path = job_manager.get_log_path(job_id)
-
-    def append_log(message: str):
-        with open(log_path, "a") as f:
-            f.write(str(message) + "\n")
+    """Run initial QC analysis and generate report."""
+    from chronos import reports
 
     try:
-        await manager.send_status("running", "Starting QC analysis...", job_id)
+        await send_log(job_id, "Starting QC analysis...")
 
         # Load data using shared utilities
-        await manager.send_status("running", "Loading data files...", job_id)
+        await send_log(job_id, "Loading data files...")
         readcounts, sequence_map, guide_map = load_crispr_data(job_id)
 
         # Load controls (required for QC)
@@ -38,53 +36,31 @@ async def run_initial_qc(job_id: str, title: str):
             require_controls=True
         )
 
-        await manager.send_status("running", "Running Chronos QC...", job_id)
+        await send_log(job_id, "Running Initial QC...")
 
         reports_dir = job_manager.get_reports_dir(job_id)
-        log_path = job_manager.get_log_path(job_id)
 
         # Convert gene lists to sgRNA lists
         negative_control_sgrnas = guide_map[guide_map.gene.isin(negative_controls)].sgrna.unique()
         positive_control_sgrnas = guide_map[guide_map.gene.isin(positive_controls)].sgrna.unique()
 
-        def run_qc_report():
-            """Run QC report in thread, capturing output."""
-            import contextlib
-            import io
-            from chronos import reports
-
-            output_capture = io.StringIO()
-            error = None
-
-            try:
-                with contextlib.redirect_stdout(output_capture), contextlib.redirect_stderr(output_capture):
-                    reports.qc_initial_data(
-                        readcounts=readcounts,
-                        guide_map=guide_map,
-                        sequence_map=sequence_map,
-                        positive_control_sgrnas=positive_control_sgrnas,
-                        negative_control_sgrnas=negative_control_sgrnas,
-                        directory=str(reports_dir),
-                        title=title,
-                        report_name=f"{title} initial qc.pdf"
-                    )
-            except Exception as e:
-                error = e
-
-            return output_capture.getvalue(), error
-
+        # Run QC report - let library stdout go to terminal (like chronos_run.py)
         async with matplotlib_lock:
             import matplotlib.pyplot as plt
             plt.close('all')  # Clear stale figures
-            output, error = await asyncio.to_thread(run_qc_report)
+            await asyncio.to_thread(
+                reports.qc_initial_data,
+                readcounts=readcounts,
+                guide_map=guide_map,
+                sequence_map=sequence_map,
+                positive_control_sgrnas=positive_control_sgrnas,
+                negative_control_sgrnas=negative_control_sgrnas,
+                directory=str(reports_dir),
+                title=title,
+                report_name=f"{title} initial qc.pdf"
+            )
 
-        with open(log_path, "w") as log_file:
-            log_file.write(output)
-            if error:
-                log_file.write(f"\n\nERROR:\n{traceback.format_exc()}")
-                await manager.send_error(str(error), job_id)
-                return
-
+        await send_log(job_id, "Initial QC report generated.")
         job_manager.mark_qc_completed()
 
         await manager.send_status(
@@ -95,11 +71,7 @@ async def run_initial_qc(job_id: str, title: str):
         )
 
     except Exception as e:
-        error_msg = traceback.format_exc()
-        await manager.send_error(str(e), job_id)
-        append_log(error_msg)
-        import asyncio
-        await asyncio.sleep(0.5)
+        await send_error(job_id, e, "QC analysis")
 
 
 class QCRequest(BaseModel):
@@ -117,14 +89,19 @@ async def start_qc(request: QCRequest = None):
     if not job_manager.current_job_id:
         raise HTTPException(status_code=400, detail="No active job. Upload files first.")
 
+    # Validate required files
     required = ["readcounts", "condition_map", "guide_map"]
-    missing = [f for f in required if not job_manager.get_file_path(f)]
+    missing = validate_required_files(required)
 
     if missing:
         raise HTTPException(
             status_code=400,
             detail=f"Missing required files: {', '.join(missing)}"
         )
+
+    # For sequence formats, check preprocessing is complete
+    # (condition_map validation happens during preprocessing)
+    validate_preprocessing_complete()
 
     job_id = job_manager.current_job_id
     title = request.title if request and request.title else job_manager.get_title()

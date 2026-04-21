@@ -1,0 +1,13 @@
+barcode,file,sequence_ID,cell_line_name,pDNA_batch,days
+AGAATGAG,AGAATGAG.1.construct.fastq,A04,cell1,1,14
+ATCCGTCC,ATCCGTCC.1.construct.fastq,A09,pDNA,1,0
+CAGGCATA,CAGGCATA.1.construct.fastq,A08,cell2,1,7
+CGTCTTGG,CGTCTTGG.1.construct.fastq,A03,cell1,1,14
+GAACAAAG,GAACAAAG.1.construct.fastq,A09,pDNA,1,0
+TCTGGACT,TCTGGACT.1.construct.fastq,A08,cell2,1,7
+AGAATGAG,AGAATGAG.2.construct.fastq,A04,cell1,1,14
+ATCCGTCC,ATCCGTCC.2.construct.fastq,A09,pDNA,1,0
+CAGGCATA,CAGGCATA.2.construct.fastq,A08,cell2,1,14
+CGTCTTGG,CGTCTTGG.2.construct.fastq,A03,cell1,1,14
+GAACAAAG,GAACAAAG.2.construct.fastq,A09,pDNA,1,0
+TCTGGACT,TCTGGACT.2.construct.fastq,A08,cell2,1,7

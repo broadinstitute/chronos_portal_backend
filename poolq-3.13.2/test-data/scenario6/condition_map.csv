@@ -1,0 +1,9 @@
+barcode,sequence_ID,cell_line_name,days,pDNA_batch
+CACGCG,F03,pDNA,0,1
+CATACG,G02,pDNA,0,1
+CTAGCG,G02,Cell1,14,1
+CTCCGC,F10,Cell1,14,1
+CTGCGA,C07,Cell2,14,1
+GAGCGA,H03,Cell2,14,1
+GGGGCA,G08,Cell3,14,1
+GTACTC,B02,Cell3,14,1

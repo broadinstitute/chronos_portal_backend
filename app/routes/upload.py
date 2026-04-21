@@ -4,7 +4,13 @@ from typing import Optional
 import json
 
 from ..services.job_manager import job_manager
-from ..services.file_utils import parse_file, parse_gene_list
+from ..services.file_utils import (
+    parse_file,
+    parse_gene_list,
+    is_sequence_format,
+    is_archive,
+    extract_archive,
+)
 
 router = APIRouter()
 
@@ -76,6 +82,8 @@ async def upload_file(
     file_format: str = Form("csv"),
     job_id: Optional[str] = Form(None),
     job_name: Optional[str] = Form(None),
+    file_index: Optional[str] = Form(None),  # For multi-file uploads
+    total_files: Optional[str] = Form(None),  # For multi-file uploads
 ):
     valid_types = [
         "readcounts",
@@ -97,6 +105,14 @@ async def upload_file(
         job_manager.create_job(job_name)
 
     uploads_dir = job_manager.get_uploads_dir(job_manager.current_job_id)
+
+    # Handle sequence format readcounts specially
+    if file_type == "readcounts" and is_sequence_format(file_format):
+        return await _handle_sequence_readcount_upload(
+            file, file_format, uploads_dir, file_index, total_files
+        )
+
+    # Standard upload path for non-sequence formats
     file_path = uploads_dir / f"{file_type}.{file_format}"
 
     content = await file.read()
@@ -149,6 +165,105 @@ async def upload_file(
         )
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error parsing file: {str(e)}")
+
+
+async def _handle_sequence_readcount_upload(
+    file: UploadFile,
+    file_format: str,
+    uploads_dir: Path,
+    file_index: Optional[str],
+    total_files: Optional[str],
+):
+    """Handle upload of sequence format readcount files (fastq/bam/sam).
+
+    Supports:
+    - Single file upload
+    - Multi-file upload (with file_index and total_files)
+    - Archive upload (zip/gz) with automatic extraction
+    """
+    # Create readcounts subdirectory for sequence files
+    readcounts_dir = uploads_dir / "readcounts"
+    readcounts_dir.mkdir(exist_ok=True)
+
+    # Clear previous readcount files on first upload of a batch
+    if file_index is None or file_index == "0":
+        job_manager.clear_readcount_files()
+        job_manager.set_readcount_format(file_format)
+
+    # Save the uploaded file
+    saved_path = readcounts_dir / file.filename
+    content = await file.read()
+    with open(saved_path, "wb") as f:
+        f.write(content)
+
+    # Check if file is an archive and extract
+    if is_archive(file.filename):
+        try:
+            extracted_files = extract_archive(saved_path, readcounts_dir)
+            # Remove the archive after extraction
+            saved_path.unlink()
+
+            # Track all extracted files
+            for extracted_path in extracted_files:
+                job_manager.add_readcount_file(extracted_path)
+
+            return {
+                "status": "success",
+                "job_id": job_manager.current_job_id,
+                "file_type": "readcounts",
+                "filename": file.filename,
+                "extracted_files": len(extracted_files),
+                "total_readcount_files": job_manager.get_readcount_count(),
+            }
+        except Exception as e:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Error extracting archive: {str(e)}"
+            )
+    else:
+        # Single file or one of multiple files
+        job_manager.add_readcount_file(saved_path)
+
+        return {
+            "status": "success",
+            "job_id": job_manager.current_job_id,
+            "file_type": "readcounts",
+            "filename": file.filename,
+            "file_index": file_index,
+            "total_files": total_files,
+            "total_readcount_files": job_manager.get_readcount_count(),
+        }
+
+
+@router.post("/readcount-options")
+async def set_readcount_options(request: dict):
+    """Store sequence format options for raw reads processing.
+
+    Expected fields:
+    - job_id: str (required)
+    - readType: "single" | "paired"
+    - sgrnaFindMethod: "fixed" | "prefix" | "template"
+    - sgrnaStart, sgrnaEnd, sgrnaPrefix, sgrnaTemplate, etc.
+    - sampleFindMethod, sampleStart, etc.
+    - reverseSampleFindMethod (if paired)
+    - countAmbiguous: bool
+    - errorIfTooShort: bool
+    """
+    job_id = request.get("job_id")
+    if not job_id:
+        raise HTTPException(status_code=400, detail="job_id is required")
+
+    job_manager.resume_job(job_id)
+
+    # Store all options except job_id
+    options = {k: v for k, v in request.items() if k != "job_id"}
+    job_manager.set_readcount_options(options)
+
+    return {
+        "status": "success",
+        "job_id": job_id,
+        "options_saved": True,
+    }
 
 
 @router.post("/new-job")

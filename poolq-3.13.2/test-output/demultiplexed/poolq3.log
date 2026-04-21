@@ -1,0 +1,36 @@
+INFO 2026-04-09 10:09:03,659 o.b.g.p.PoolQ - PoolQ version: 3.13.2
+INFO 2026-04-09 10:09:03,686 o.b.g.p.PoolQ - PoolQ command-line settings:
+--row-reference Reference.csv \
+--col-reference Conditions.csv \
+--row-reads TTGAACCG:TTGAACCG.construct.fastq,CCGAGTTA:CCGAGTTA.construct.fastq,TTGAGTAT:TTGAGTAT.construct.fastq,CCTCCAAT:CCTCCAAT.construct.fastq,GGTCACCG:GGTCACCG.construct.fastq,TTGACAAT:TTGACAAT.construct.fastq,AATCCAAT:AATCCAAT.construct.fastq,TTCTCATA:TTCTCATA.construct.fastq,AATCCACG:AATCCACG.construct.fastq,AATCGTGC:AATCGTGC.construct.fastq,AAGAACTA:AAGAACTA.construct.fastq,CCAGTGAT:CCAGTGAT.construct.fastq,GGTCGTGC:GGTCGTGC.construct.fastq,TTAGACCG:TTAGACCG.construct.fastq,GGTCCACG:GGTCCACG.construct.fastq,CCGAACTA:CCGAACTA.construct.fastq,AACTCACG:AACTCACG.construct.fastq,AATCACTA:AATCACTA.construct.fastq,GGTCCATA:GGTCCATA.construct.fastq,GGTCTGCG:GGTCTGCG.construct.fastq,CCAGTGGC:CCAGTGGC.construct.fastq,AACTTGCG:AACTTGCG.construct.fastq,unmatched.construct.fastq \
+--read-id-check-policy strict \
+--row-matcher mismatch \
+--col-matcher exact \
+--row-barcode-policy PREFIX:CACCG@18 \
+--unexpected-sequence-threshold 100 \
+--compat \
+--counts counts.txt \
+--normalized-counts lognormalized-counts.txt \
+--barcode-counts barcode-counts.txt \
+--quality quality.txt \
+--correlation correlation.txt \
+--unexpected-sequences unexpected-sequences.txt \
+--run-info runinfo.txt
+INFO 2026-04-09 10:09:03,686 o.b.g.p.PoolQ - Reading row reference data
+INFO 2026-04-09 10:09:03,721 o.b.g.p.PoolQ - Reading column reference data
+INFO 2026-04-09 10:09:03,722 o.b.g.p.PoolQ - Reading global reference data
+INFO 2026-04-09 10:09:03,726 o.b.g.p.PoolQ - Building row reference
+INFO 2026-04-09 10:09:03,753 o.b.g.p.PoolQ - Building column reference
+INFO 2026-04-09 10:09:03,784 o.b.g.p.PoolQ - Writing unexpected sequence cache files to /var/folders/zv/1d_rb7m137n205fmdmc2fy700000gq/T/unexpected-sequence-cache7583079206590973799
+INFO 2026-04-09 10:09:03,795 o.b.g.p.p.PoolQProcess - Beginning task processing.
+INFO 2026-04-09 10:09:03,812 o.b.g.p.p.PoolQProcess - Shutting down.
+INFO 2026-04-09 10:09:03,812 o.b.g.p.p.PoolQProcess - Processed 1,022 reads in 17 ms (60.117645 reads/ms). Match percent: 97.84736; queue size: 0
+INFO 2026-04-09 10:09:03,904 o.b.g.p.PoolQ - Writing counts file counts.txt
+INFO 2026-04-09 10:09:03,941 o.b.g.p.PoolQ - Writing quality file quality.txt
+INFO 2026-04-09 10:09:03,964 o.b.g.p.PoolQ - Writing log-normalized counts file lognormalized-counts.txt
+INFO 2026-04-09 10:09:03,976 o.b.g.p.PoolQ - Writing barcode counts file barcode-counts.txt
+INFO 2026-04-09 10:09:03,980 o.b.g.p.PoolQ - Writing correlation file correlation.txt
+INFO 2026-04-09 10:09:03,993 o.b.g.p.PoolQ - Writing unexpected sequence report unexpected-sequences.txt
+INFO 2026-04-09 10:09:04,012 o.b.g.p.PoolQ - Removing unexpected sequence cache None
+INFO 2026-04-09 10:09:04,016 o.b.g.p.PoolQ - Writing run info unexpected-sequences.txt
+INFO 2026-04-09 10:09:04,018 o.b.g.p.PoolQ - PoolQ complete

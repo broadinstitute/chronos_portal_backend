@@ -1,8 +1,10 @@
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
+from pydantic import BaseModel
 from pathlib import Path
 import json
 import re
+import shutil
 from pypdf import PdfReader
 from typing import List
 
@@ -11,9 +13,13 @@ from ..services.job_manager import job_manager
 router = APIRouter()
 
 
+class DeleteJobsRequest(BaseModel):
+    job_ids: List[str]
+
+
 @router.get("/jobs")
 async def list_jobs():
-    """List all jobs that have completed QC (have a Reports directory with content)."""
+    """List all jobs that have a config.json (regardless of completion status)."""
     jobs = []
     jobs_dir = job_manager.jobs_dir
 
@@ -24,9 +30,9 @@ async def list_jobs():
         if not job_dir.is_dir():
             continue
 
-        reports_dir = job_dir / "Reports"
-        # Check if QC has completed (has PNG files)
-        if reports_dir.exists() and list(reports_dir.glob("*.png")):
+        config_path = job_dir / "config.json"
+        # Check if job has a config file (job was created)
+        if config_path.exists():
             title_file = job_dir / "title.txt"
             title = title_file.read_text().strip() if title_file.exists() else job_dir.name
 
@@ -38,6 +44,35 @@ async def list_jobs():
     return {"jobs": jobs}
 
 
+@router.delete("/jobs")
+async def delete_jobs(request: DeleteJobsRequest):
+    """Delete multiple jobs and their associated logs."""
+    deleted = []
+    errors = []
+
+    for job_id in request.job_ids:
+        job_dir = job_manager.jobs_dir / job_id
+        log_path = job_manager.logs_dir / f"{job_id}.log"
+
+        try:
+            # Remove job directory if exists
+            if job_dir.exists():
+                shutil.rmtree(job_dir)
+
+            # Remove log file if exists
+            if log_path.exists():
+                log_path.unlink()
+
+            deleted.append(job_id)
+        except Exception as e:
+            errors.append({"job_id": job_id, "error": str(e)})
+
+    return {
+        "deleted": deleted,
+        "errors": errors,
+    }
+
+
 @router.get("/jobs/{job_id}/log")
 async def get_job_log(job_id: str):
     """Get the log file content for a job."""
@@ -47,6 +82,29 @@ async def get_job_log(job_id: str):
         return {"job_id": job_id, "log": ""}
 
     return {"job_id": job_id, "log": log_path.read_text()}
+
+
+@router.get("/jobs/{job_id}/status")
+async def get_job_status(job_id: str):
+    """Get comprehensive job status for the results page."""
+    job_manager.resume_job(job_id)
+    config = job_manager.get_config()
+
+    # Get readcount file names (just the filename, not full path)
+    readcount_files = job_manager.get_readcount_files()
+    readcount_filenames = [f.name for f in readcount_files]
+
+    return {
+        "job_id": job_id,
+        "title": job_manager.get_title(),
+        "is_sequence_format": job_manager.is_sequence_format(),
+        "preprocessing_complete": job_manager.is_preprocessing_complete(),
+        "qc_completed": config.get("qc_completed_at") is not None,
+        "chronos_completed": config.get("chronos_completed_at") is not None,
+        "available_conditions": job_manager.get_available_conditions(),
+        "readcount_options": job_manager.get_readcount_options(),
+        "readcount_filenames": readcount_filenames,
+    }
 
 
 SECTIONS = [
