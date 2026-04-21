@@ -1,0 +1,374 @@
+{
+  "tests": [
+    {
+      "name": "scenario1",
+      "readcounts": ["test-data/scenario1/scenario1.fastq"],
+      "readcount_format": "fastq",
+      "condition_map": "test-data/poolq_condition_map.csv",
+      "condition_map_format": "csv",
+      "guide_map": "test-data/poolq_guide_map.csv",
+      "guide_map_format": "csv",
+      "options": {
+        "readType": "single",
+        "alreadyDeconvoluted": false,
+        "sgrnaFindMethod": "fixed",
+        "sgrnaStart": 30,
+        "sampleFindMethod": "fixed",
+        "sampleStart": 0,
+        "countAmbiguous": false,
+        "errorIfTooShort": true
+      },
+      "expected_counts": "test-output/scenario1/counts.txt"
+    },
+    {
+      "name": "scenario2",
+      "readcounts": ["test-data/scenario2/scenario2.fastq"],
+      "readcount_format": "fastq",
+      "condition_map": "test-data/poolq_condition_map.csv",
+      "condition_map_format": "csv",
+      "guide_map": "test-data/poolq_guide_map.csv",
+      "guide_map_format": "csv",
+      "options": {
+        "readType": "single",
+        "alreadyDeconvoluted": false,
+        "sgrnaFindMethod": "prefix",
+        "sgrnaPrefix": "CACCG",
+        "sgrnaSearchAfter": 18,
+        "sampleFindMethod": "fixed",
+        "sampleStart": 0,
+        "countAmbiguous": false,
+        "errorIfTooShort": true
+      },
+      "expected_counts": "test-output/scenario2/counts.txt"
+    },
+    {
+      "name": "scenario3",
+      "readcounts": [
+        "test-data/scenario3/scenario3.1.fastq",
+        "test-data/scenario3/scenario3.barcode_1.fastq"
+      ],
+      "readcount_format": "fastq",
+      "condition_map": "test-data/poolq_condition_map.csv",
+      "condition_map_format": "csv",
+      "guide_map": "test-data/poolq_guide_map.csv",
+      "guide_map_format": "csv",
+      "options": {
+        "readType": "single",
+        "alreadyDeconvoluted": false,
+        "sgrnaFindMethod": "fixed",
+        "sgrnaStart": 29,
+        "sampleFindMethod": "fixed",
+        "sampleStart": 0,
+        "countAmbiguous": false,
+        "errorIfTooShort": true,
+        "fileAssignments": {
+          "scenario3.1.fastq": "sgrna",
+          "scenario3.barcode_1.fastq": "sample"
+        }
+      },
+      "expected_counts": "test-output/scenario3/counts.txt"
+    },
+    {
+      "name": "scenario4",
+      "readcounts": [
+        "test-data/scenario4/scenario4.1.fastq",
+        "test-data/scenario4/scenario4.barcode_1.fastq"
+      ],
+      "readcount_format": "fastq",
+      "condition_map": "test-data/poolq_condition_map.csv",
+      "condition_map_format": "csv",
+      "guide_map": "test-data/poolq_guide_map.csv",
+      "guide_map_format": "csv",
+      "options": {
+        "readType": "single",
+        "alreadyDeconvoluted": false,
+        "sgrnaFindMethod": "prefix",
+        "sgrnaPrefix": "CACCG",
+        "sgrnaSearchAfter": 18,
+        "sampleFindMethod": "fixed",
+        "sampleStart": 0,
+        "countAmbiguous": false,
+        "errorIfTooShort": true,
+        "fileAssignments": {
+          "scenario4.1.fastq": "sgrna",
+          "scenario4.barcode_1.fastq": "sample"
+        }
+      },
+      "expected_counts": "test-output/scenario4/counts.txt"
+    },
+    {
+      "name": "scenario5",
+      "readcounts": [
+        "test-data/scenario5/scenario5.1.sam",
+        "test-data/scenario5/scenario5.barcode_1.sam"
+      ],
+      "readcount_format": "sam",
+      "condition_map": "test-data/poolq_condition_map.csv",
+      "condition_map_format": "csv",
+      "guide_map": "test-data/poolq_guide_map.csv",
+      "guide_map_format": "csv",
+      "options": {
+        "readType": "single",
+        "alreadyDeconvoluted": false,
+        "sgrnaFindMethod": "prefix",
+        "sgrnaPrefix": "CACCG",
+        "sgrnaSearchAfter": 18,
+        "sampleFindMethod": "fixed",
+        "sampleStart": 0,
+        "countAmbiguous": false,
+        "errorIfTooShort": true,
+        "fileAssignments": {
+          "scenario5.1.sam": "sgrna",
+          "scenario5.barcode_1.sam": "sample"
+        }
+      },
+      "expected_counts": "test-output/scenario5/counts.txt"
+    },
+    {
+      "name": "scenario6",
+      "readcounts": [
+        "test-data/scenario6/scenario6.fastq",
+        "test-data/scenario6/scenario6.barcode_1.fastq"
+      ],
+      "readcount_format": "fastq",
+      "condition_map": "test-data/scenario6/condition_map.csv",
+      "condition_map_format": "csv",
+      "guide_map": "test-data/scenario6/guide_map.csv",
+      "guide_map_format": "csv",
+      "options": {
+        "readType": "single",
+        "alreadyDeconvoluted": false,
+        "sgrnaFindMethod": "template",
+        "sgrnaTemplate": "caccgNNNNNnnnnnnnnnttacaNNNNN",
+        "sgrnaSearchAfter": 11,
+        "sampleFindMethod": "fixed",
+        "sampleStart": 0,
+        "countAmbiguous": false,
+        "errorIfTooShort": true,
+        "fileAssignments": {
+          "scenario6.fastq": "sgrna",
+          "scenario6.barcode_1.fastq": "sample"
+        }
+      },
+      "expected_counts": "test-output/scenario6/counts.txt"
+    },
+    {
+      "name": "long-template",
+      "readcounts": [
+        "test-data/long-template/long-template.fastq",
+        "test-data/long-template/long-template.barcode_1.fastq"
+      ],
+      "readcount_format": "fastq",
+      "condition_map": "test-data/long-template/condition_map.csv",
+      "condition_map_format": "csv",
+      "guide_map": "test-data/long-template/guide_map.csv",
+      "guide_map_format": "csv",
+      "options": {
+        "readType": "single",
+        "alreadyDeconvoluted": false,
+        "sgrnaFindMethod": "template",
+        "sgrnaTemplate": "caccgNNNNNNNNNNNNNNNNNNNNnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnNNNNNNNNNNNNNNNNNNNN",
+        "sgrnaSearchAfter": 12,
+        "sampleFindMethod": "fixed",
+        "sampleStart": 0,
+        "countAmbiguous": false,
+        "errorIfTooShort": true,
+        "fileAssignments": {
+          "long-template.fastq": "sgrna",
+          "long-template.barcode_1.fastq": "sample"
+        }
+      },
+      "expected_counts": "test-output/long-template/counts.txt"
+    },
+    {
+      "name": "paired-end",
+      "readcounts": [
+        "test-data/paired-end/paired-end.f.fastq",
+        "test-data/paired-end/paired-end.r.fastq",
+        "test-data/paired-end/paired-end.barcode_1.fastq"
+      ],
+      "readcount_format": "fastq",
+      "condition_map": "test-data/paired-end/condition_map.csv",
+      "condition_map_format": "csv",
+      "guide_map": "test-data/paired-end/guide_map.csv",
+      "guide_map_format": "csv",
+      "options": {
+        "readType": "paired",
+        "alreadyDeconvoluted": false,
+        "sgrnaFindMethod": "prefix",
+        "sgrnaPrefix": "CACCG",
+        "sgrnaSearchAfter": 11,
+        "sgrnaReversedFindMethod": "prefix",
+        "sgrnaReversedPrefix": "CGGTG",
+        "sgrnaReversedSearchAfter": 11,
+        "sampleFindMethod": "fixed",
+        "sampleStart": 0,
+        "countAmbiguous": false,
+        "errorIfTooShort": true,
+        "fileAssignments": {
+          "paired-end.f.fastq": "sgrna",
+          "paired-end.r.fastq": "sgrna_reversed",
+          "paired-end.barcode_1.fastq": "sample"
+        }
+      },
+      "expected_counts": "test-output/paired-end/counts.txt"
+    },
+    {
+      "name": "multiple-inputs",
+      "readcounts": [
+        "test-data/multiple-inputs/scenario4.1.fastq",
+        "test-data/multiple-inputs/scenario4.2.fastq",
+        "test-data/multiple-inputs/scenario4.3.fastq",
+        "test-data/multiple-inputs/scenario4.4.fastq",
+        "test-data/multiple-inputs/scenario4.barcode_1.fastq",
+        "test-data/multiple-inputs/scenario4.barcode_2.fastq",
+        "test-data/multiple-inputs/scenario4.barcode_3.fastq",
+        "test-data/multiple-inputs/scenario4.barcode_4.fastq"
+      ],
+      "readcount_format": "fastq",
+      "condition_map": "test-data/poolq_condition_map.csv",
+      "condition_map_format": "csv",
+      "guide_map": "test-data/poolq_guide_map.csv",
+      "guide_map_format": "csv",
+      "options": {
+        "readType": "single",
+        "alreadyDeconvoluted": false,
+        "sgrnaFindMethod": "prefix",
+        "sgrnaPrefix": "CACCG",
+        "sgrnaSearchAfter": 18,
+        "sampleFindMethod": "fixed",
+        "sampleStart": 0,
+        "countAmbiguous": false,
+        "errorIfTooShort": true,
+        "fileAssignments": {
+          "scenario4.1.fastq": "sgrna",
+          "scenario4.2.fastq": "sgrna",
+          "scenario4.3.fastq": "sgrna",
+          "scenario4.4.fastq": "sgrna",
+          "scenario4.barcode_1.fastq": "sample",
+          "scenario4.barcode_2.fastq": "sample",
+          "scenario4.barcode_3.fastq": "sample",
+          "scenario4.barcode_4.fastq": "sample"
+        }
+      },
+      "expected_counts": "test-output/multiple-inputs/counts.txt"
+    },
+    {
+      "name": "demultiplexed",
+      "readcounts": [
+        "test-data/demultiplexed/TTGAACCG.construct.fastq",
+        "test-data/demultiplexed/CCGAGTTA.construct.fastq",
+        "test-data/demultiplexed/TTGAGTAT.construct.fastq",
+        "test-data/demultiplexed/CCTCCAAT.construct.fastq",
+        "test-data/demultiplexed/GGTCACCG.construct.fastq",
+        "test-data/demultiplexed/TTGACAAT.construct.fastq",
+        "test-data/demultiplexed/AATCCAAT.construct.fastq",
+        "test-data/demultiplexed/TTCTCATA.construct.fastq",
+        "test-data/demultiplexed/AATCCACG.construct.fastq",
+        "test-data/demultiplexed/AATCGTGC.construct.fastq",
+        "test-data/demultiplexed/AAGAACTA.construct.fastq",
+        "test-data/demultiplexed/CCAGTGAT.construct.fastq",
+        "test-data/demultiplexed/GGTCGTGC.construct.fastq",
+        "test-data/demultiplexed/TTAGACCG.construct.fastq",
+        "test-data/demultiplexed/GGTCCACG.construct.fastq",
+        "test-data/demultiplexed/CCGAACTA.construct.fastq",
+        "test-data/demultiplexed/AACTCACG.construct.fastq",
+        "test-data/demultiplexed/AATCACTA.construct.fastq",
+        "test-data/demultiplexed/GGTCCATA.construct.fastq",
+        "test-data/demultiplexed/GGTCTGCG.construct.fastq",
+        "test-data/demultiplexed/CCAGTGGC.construct.fastq",
+        "test-data/demultiplexed/AACTTGCG.construct.fastq",
+        "test-data/demultiplexed/unmatched.construct.fastq"
+      ],
+      "readcount_format": "fastq",
+      "condition_map": "test-data/poolq_condition_map.csv",
+      "condition_map_format": "csv",
+      "guide_map": "test-data/poolq_guide_map.csv",
+      "guide_map_format": "csv",
+      "options": {
+        "readType": "single",
+        "alreadyDeconvoluted": true,
+        "sgrnaFindMethod": "prefix",
+        "sgrnaPrefix": "CACCG",
+        "sgrnaSearchAfter": 18,
+        "countAmbiguous": false,
+        "errorIfTooShort": true,
+        "fileAssignments": {
+          "TTGAACCG.construct.fastq": "sgrna",
+          "CCGAGTTA.construct.fastq": "sgrna",
+          "TTGAGTAT.construct.fastq": "sgrna",
+          "CCTCCAAT.construct.fastq": "sgrna",
+          "GGTCACCG.construct.fastq": "sgrna",
+          "TTGACAAT.construct.fastq": "sgrna",
+          "AATCCAAT.construct.fastq": "sgrna",
+          "TTCTCATA.construct.fastq": "sgrna",
+          "AATCCACG.construct.fastq": "sgrna",
+          "AATCGTGC.construct.fastq": "sgrna",
+          "AAGAACTA.construct.fastq": "sgrna",
+          "CCAGTGAT.construct.fastq": "sgrna",
+          "GGTCGTGC.construct.fastq": "sgrna",
+          "TTAGACCG.construct.fastq": "sgrna",
+          "GGTCCACG.construct.fastq": "sgrna",
+          "CCGAACTA.construct.fastq": "sgrna",
+          "AACTCACG.construct.fastq": "sgrna",
+          "AATCACTA.construct.fastq": "sgrna",
+          "GGTCCATA.construct.fastq": "sgrna",
+          "GGTCTGCG.construct.fastq": "sgrna",
+          "CCAGTGGC.construct.fastq": "sgrna",
+          "AACTTGCG.construct.fastq": "sgrna",
+          "unmatched.construct.fastq": "sgrna"
+        }
+      },
+      "expected_counts": "test-output/demultiplexed/counts.txt"
+    },
+    {
+      "name": "demultiplexed-paired-end",
+      "readcounts": [
+        "test-data/demultiplexed-paired-end/AGAATGAG.1.construct.fastq",
+        "test-data/demultiplexed-paired-end/AGAATGAG.2.construct.fastq",
+        "test-data/demultiplexed-paired-end/ATCCGTCC.1.construct.fastq",
+        "test-data/demultiplexed-paired-end/ATCCGTCC.2.construct.fastq",
+        "test-data/demultiplexed-paired-end/CAGGCATA.1.construct.fastq",
+        "test-data/demultiplexed-paired-end/CAGGCATA.2.construct.fastq",
+        "test-data/demultiplexed-paired-end/CGTCTTGG.1.construct.fastq",
+        "test-data/demultiplexed-paired-end/CGTCTTGG.2.construct.fastq",
+        "test-data/demultiplexed-paired-end/GAACAAAG.1.construct.fastq",
+        "test-data/demultiplexed-paired-end/GAACAAAG.2.construct.fastq",
+        "test-data/demultiplexed-paired-end/TCTGGACT.1.construct.fastq",
+        "test-data/demultiplexed-paired-end/TCTGGACT.2.construct.fastq"
+      ],
+      "readcount_format": "fastq",
+      "condition_map": "test-data/demultiplexed-paired-end/condition_map.csv",
+      "condition_map_format": "csv",
+      "guide_map": "test-data/demultiplexed-paired-end/guide_map.csv",
+      "guide_map_format": "csv",
+      "options": {
+        "readType": "paired",
+        "alreadyDeconvoluted": true,
+        "sgrnaFindMethod": "prefix",
+        "sgrnaPrefix": "CACCG",
+        "sgrnaSearchAfter": 11,
+        "sgrnaReversedFindMethod": "prefix",
+        "sgrnaReversedPrefix": "CGGTG",
+        "sgrnaReversedSearchAfter": 11,
+        "countAmbiguous": false,
+        "errorIfTooShort": true,
+        "fileAssignments": {
+          "AGAATGAG.1.construct.fastq": "sgrna",
+          "AGAATGAG.2.construct.fastq": "sgrna_reversed",
+          "ATCCGTCC.1.construct.fastq": "sgrna",
+          "ATCCGTCC.2.construct.fastq": "sgrna_reversed",
+          "CAGGCATA.1.construct.fastq": "sgrna",
+          "CAGGCATA.2.construct.fastq": "sgrna_reversed",
+          "CGTCTTGG.1.construct.fastq": "sgrna",
+          "CGTCTTGG.2.construct.fastq": "sgrna_reversed",
+          "GAACAAAG.1.construct.fastq": "sgrna",
+          "GAACAAAG.2.construct.fastq": "sgrna_reversed",
+          "TCTGGACT.1.construct.fastq": "sgrna",
+          "TCTGGACT.2.construct.fastq": "sgrna_reversed"
+        }
+      },
+      "expected_counts": "test-output/demultiplexed-paired-end/counts.txt"
+    }
+  ]
+}

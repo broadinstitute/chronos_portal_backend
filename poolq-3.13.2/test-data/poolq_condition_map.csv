@@ -1,23 +1,23 @@
 barcode,file,label,days,condition,cell_line_name,pDNA_batch,replicate,sequence_ID
-TTGAACCG,TTGAACCG.construct.fastq,pDNA,0,pDNA,pDNA,batch0,,pDNA1
-CCGAGTTA,CCGAGTTA.construct.fastq,pDNA,0,pDNA,pDNA,batch0,,pDNA2
-TTGAGTAT,TTGAGTAT.construct.fastq,Day 1 + Drug,1,Drug,test,batch0,rep1,Day 1 + Drugrep1
-CCTCCAAT,CCTCCAAT.construct.fastq,Day 1 + Drug,1,Drug,test,batch0,rep2,Day 1 + Drugrep2
-GGTCACCG,GGTCACCG.construct.fastq,Day 1 - Drug,1,Control,test,batch0,rep1,Day 1 - Drugrep1
-TTGACAAT,TTGACAAT.construct.fastq,Day 1 - Drug,1,Control,test,batch0,rep2,Day 1 - Drugrep2
-AATCCAAT,AATCCAAT.construct.fastq,Day 2 + Drug,2,Drug,test,batch0,rep1,Day 2 + Drugrep1
-TTCTCATA,TTCTCATA.construct.fastq,Day 2 + Drug,2,Drug,test,batch0,rep2,Day 2 + Drugrep2
-AATCCACG,AATCCACG.construct.fastq,Day 2 - Drug,2,Control,test,batch0,rep1,Day 2 - Drugrep1
-AATCGTGC,AATCGTGC.construct.fastq,Day 2 - Drug,2,Control,test,batch0,rep2,Day 2 - Drugrep2
-AAGAACTA,AAGAACTA.construct.fastq,Day 4 + Drug,4,Drug,test,batch0,rep1,Day 4 + Drugrep1
-CCAGTGAT,CCAGTGAT.construct.fastq,Day 4 + Drug,4,Drug,test,batch0,rep2,Day 4 + Drugrep2
-GGTCGTGC,GGTCGTGC.construct.fastq,Day 4 - Drug,4,Control,test,batch0,rep1,Day 4 - Drugrep1
-TTAGACCG,TTAGACCG.construct.fastq,Day 4 - Drug,4,Control,test,batch0,rep2,Day 4 - Drugrep2
-GGTCCACG,GGTCCACG.construct.fastq,Day 8 + Drug,8,Drug,test,batch0,rep1,Day 8 + Drugrep1
-CCGAACTA,CCGAACTA.construct.fastq,Day 8 + Drug,8,Drug,test,batch0,rep2,Day 8 + Drugrep2
-AACTCACG,AACTCACG.construct.fastq,Day 8 - Drug,8,Control,test,batch0,rep1,Day 8 - Drugrep1
-AATCACTA,AATCACTA.construct.fastq,Day 8 - Drug,8,Control,test,batch0,rep2,Day 8 - Drugrep2
-GGTCCATA,GGTCCATA.construct.fastq,Day 16 + Drug,16,Drug,test,batch0,rep1,Day 16 + Drugrep1
-GGTCTGCG,GGTCTGCG.construct.fastq,Day 16 + Drug,16,Drug,test,batch0,rep2,Day 16 + Drugrep2
-CCAGTGGC,CCAGTGGC.construct.fastq,Day 16 - Drug,16,Control,test,batch0,rep1,Day 16 - Drugrep1
-AACTTGCG,AACTTGCG.construct.fastq,Day 16 - Drug,16,Control,test,batch0,rep2,Day 16 - Drugrep2
+TTGAACCG,TTGAACCG.construct.fastq,pDNA,0,pDNA,pDNA,batch0,,pDNA
+CCGAGTTA,CCGAGTTA.construct.fastq,pDNA,0,pDNA,pDNA,batch0,,pDNA
+TTGAGTAT,TTGAGTAT.construct.fastq,Day 1 + Drug,1,Drug,test,batch0,rep1,Day 1 + Drug
+CCTCCAAT,CCTCCAAT.construct.fastq,Day 1 + Drug,1,Drug,test,batch0,rep2,Day 1 + Drug
+GGTCACCG,GGTCACCG.construct.fastq,Day 1 - Drug,1,Control,test,batch0,rep1,Day 1 - Drug
+TTGACAAT,TTGACAAT.construct.fastq,Day 1 - Drug,1,Control,test,batch0,rep2,Day 1 - Drug
+AATCCAAT,AATCCAAT.construct.fastq,Day 2 + Drug,2,Drug,test,batch0,rep1,Day 2 + Drug
+TTCTCATA,TTCTCATA.construct.fastq,Day 2 + Drug,2,Drug,test,batch0,rep2,Day 2 + Drug
+AATCCACG,AATCCACG.construct.fastq,Day 2 - Drug,2,Control,test,batch0,rep1,Day 2 - Drug
+AATCGTGC,AATCGTGC.construct.fastq,Day 2 - Drug,2,Control,test,batch0,rep2,Day 2 - Drug
+AAGAACTA,AAGAACTA.construct.fastq,Day 4 + Drug,4,Drug,test,batch0,rep1,Day 4 + Drug
+CCAGTGAT,CCAGTGAT.construct.fastq,Day 4 + Drug,4,Drug,test,batch0,rep2,Day 4 + Drug
+GGTCGTGC,GGTCGTGC.construct.fastq,Day 4 - Drug,4,Control,test,batch0,rep1,Day 4 - Drug
+TTAGACCG,TTAGACCG.construct.fastq,Day 4 - Drug,4,Control,test,batch0,rep2,Day 4 - Drug
+GGTCCACG,GGTCCACG.construct.fastq,Day 8 + Drug,8,Drug,test,batch0,rep1,Day 8 + Drug
+CCGAACTA,CCGAACTA.construct.fastq,Day 8 + Drug,8,Drug,test,batch0,rep2,Day 8 + Drug
+AACTCACG,AACTCACG.construct.fastq,Day 8 - Drug,8,Control,test,batch0,rep1,Day 8 - Drug
+AATCACTA,AATCACTA.construct.fastq,Day 8 - Drug,8,Control,test,batch0,rep2,Day 8 - Drug
+GGTCCATA,GGTCCATA.construct.fastq,Day 16 + Drug,16,Drug,test,batch0,rep1,Day 16 + Drug
+GGTCTGCG,GGTCTGCG.construct.fastq,Day 16 + Drug,16,Drug,test,batch0,rep2,Day 16 + Drug
+CCAGTGGC,CCAGTGGC.construct.fastq,Day 16 - Drug,16,Control,test,batch0,rep1,Day 16 - Drug
+AACTTGCG,AACTTGCG.construct.fastq,Day 16 - Drug,16,Control,test,batch0,rep2,Day 16 - Drug
