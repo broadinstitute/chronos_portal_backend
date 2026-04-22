@@ -11,6 +11,7 @@ from ..services.job_manager import job_manager
 from ..services.connection_manager import manager
 from ..services.concurrency import matplotlib_lock
 from ..services.logging_utils import send_log, send_error
+from ..services.monitoring import log_memory
 from ..services.file_utils import parse_file
 from ..services.data_loader import load_crispr_data, load_controls
 
@@ -36,6 +37,7 @@ async def run_differential_dependency(
     from chronos.hit_calling import ConditionComparison
 
     try:
+        log_memory(job_manager.logs_dir, job_id, "differential_start")
         await send_log(job_id, "")
         await send_log(job_id, "=" * 60)
         await send_log(job_id, "DIFFERENTIAL DEPENDENCY")
@@ -130,6 +132,7 @@ async def run_differential_dependency_report(
                 directory=str(reports_dir),
             )
         await send_log(job_id, "Differential dependency report complete!")
+        log_memory(job_manager.logs_dir, job_id, "differential_complete")
         await asyncio.sleep(0.1)
         await manager.send_status("dd_report_ready", "Differential dependency report ready", job_id)
 

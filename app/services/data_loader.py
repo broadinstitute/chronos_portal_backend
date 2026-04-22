@@ -7,6 +7,7 @@ from .file_utils import parse_file, parse_gene_list
 DEFAULT_CONTROLS_DIR = Path(__file__).parent.parent / "data" / "controls"
 DEFAULT_POSITIVE_CONTROLS = DEFAULT_CONTROLS_DIR / "positive_controls.txt"
 DEFAULT_NEGATIVE_CONTROLS = DEFAULT_CONTROLS_DIR / "negative_controls.txt"
+DEFAULT_MAX_SAMPLES = 24
 
 
 def load_crispr_data(job_id: str):
@@ -54,6 +55,13 @@ def load_crispr_data(job_id: str):
             f"condition map has duplicated sequence IDs: {', '.join(sequence_map.sequence_ID[sequence_map.sequence_ID.duplicated()].values)}",
             "If you have multiple rows with the same sequence IDs, they must have the same cell line name, pDNA batch, days, and "
             "condition and replicate (if present)"
+        )
+
+    if sequence_map.sequence_ID.nunique() > DEFAULT_MAX_SAMPLES:
+        raise ValueError(
+            f"To avoid memory exhaustion, your data cannot have more than {DEFAULT_MAX_SAMPLES}"
+            f"unique samples. Your condition map has {sequence_map.sequence_ID.nunique()} unique"
+            f"sequence IDs."
         )
 
 

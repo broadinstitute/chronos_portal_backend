@@ -2,6 +2,7 @@ from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from pathlib import Path
 from typing import Optional
 import json
+import os
 
 from ..services.job_manager import job_manager
 from ..services.file_utils import (
@@ -118,6 +119,16 @@ async def upload_file(
     content = await file.read()
     with open(file_path, "wb") as f:
         f.write(content)
+
+    # Check file size for matrix format readcounts (10 MB limit)
+    if file_type == "readcounts":
+        file_size = os.path.getsize(file_path)
+        if file_size > 10 * 1024 * 1024:
+            os.remove(file_path)
+            raise HTTPException(
+                status_code=400,
+                detail=f"Readcount matrix exceeds maximum size of 10 MB. Your file is {file_size / (1024 * 1024):.1f} MB."
+            )
 
     job_manager.store_file_path(file_type, file_path)
     job_manager.add_file_info(file_type, file.filename, file_format, file_path)

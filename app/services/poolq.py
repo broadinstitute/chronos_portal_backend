@@ -178,6 +178,9 @@ def run_poolq(
     if search_policies['sgrnaReversed']:
         command = command + f' --rev-row-barcode-policy {search_policies["sgrnaReversed"]}'
 
+    if options["countAmbiguous"]:
+        command = command + " --count-ambiguous"
+
     job_manager.job_config["lastPoolQCommand"] = command
     job_manager._save_config()
     out = subprocess.run(command, shell=True, capture_output=True, cwd=output_dir)

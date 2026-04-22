@@ -1,18 +1,33 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+import asyncio
 import json
 import os
 
 from .routes import upload, qc, reports, chronos_run, differential_dependency, preprocessing
 from .services.connection_manager import manager
 from .services.job_manager import job_manager
+from .services.cleanup import cleanup_scheduler
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     job_manager.ensure_directories()
-    yield
+
+    # Start cleanup scheduler (runs immediately, then every 24 hours)
+    cleanup_task = asyncio.create_task(
+        cleanup_scheduler(job_manager.jobs_dir, job_manager.logs_dir)
+    )
+
+    try:
+        yield
+    finally:
+        cleanup_task.cancel()
+        try:
+            await cleanup_task
+        except asyncio.CancelledError:
+            pass
 
 
 app = FastAPI(title="Chronos Analysis Portal", lifespan=lifespan)

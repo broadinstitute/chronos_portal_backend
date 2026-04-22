@@ -10,6 +10,7 @@ from ..services.connection_manager import manager
 from ..services.data_loader import load_crispr_data, load_controls
 from ..services.concurrency import matplotlib_lock
 from ..services.logging_utils import send_log, send_error
+from ..services.monitoring import log_memory
 from ..services.validation import (
     validate_preprocessing_complete,
     validate_required_files,
@@ -23,6 +24,7 @@ async def run_initial_qc(job_id: str, title: str):
     from chronos import reports
 
     try:
+        log_memory(job_manager.logs_dir, job_id, "qc_start")
         await send_log(job_id, "Starting QC analysis...")
 
         # Load data using shared utilities
@@ -61,6 +63,7 @@ async def run_initial_qc(job_id: str, title: str):
             )
 
         await send_log(job_id, "Initial QC report generated.")
+        log_memory(job_manager.logs_dir, job_id, "qc_complete")
         job_manager.mark_qc_completed()
 
         await manager.send_status(

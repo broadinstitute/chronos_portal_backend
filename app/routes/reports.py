@@ -9,8 +9,15 @@ from pypdf import PdfReader
 from typing import List
 
 from ..services.job_manager import job_manager
+from ..services.monitoring import get_current_memory
 
 router = APIRouter()
+
+
+@router.get("/memory")
+def memory_usage():
+    """Get current server memory usage."""
+    return get_current_memory()
 
 
 class DeleteJobsRequest(BaseModel):

@@ -20,6 +20,7 @@ from ..services.file_utils import parse_file
 from ..services.data_loader import load_crispr_data, load_controls
 from ..services.concurrency import matplotlib_lock
 from ..services.logging_utils import send_log, send_error
+from ..services.monitoring import log_memory
 
 router = APIRouter()
 
@@ -212,6 +213,7 @@ async def run_post_chronos_qc(
     import chronos.reports
 
     try:
+        log_memory(job_manager.logs_dir, job_id, "qc_report_start")
         await send_log(job_id, "Generating dataset QC report...")
         await send_log(job_id, f"Using {gene_effect_file} for QC report")
 
@@ -242,6 +244,7 @@ async def run_post_chronos_qc(
                 gene_effect_file=gene_effect_file,
             )
         await send_log(job_id, "Dataset QC report generated.")
+        log_memory(job_manager.logs_dir, job_id, "qc_report_complete")
         await asyncio.sleep(0.1)
         await manager.send_status("qc_report_ready", "QC report ready", job_id)
 
@@ -274,6 +277,7 @@ async def run_hit_calling(
     )
 
     try:
+        log_memory(job_manager.logs_dir, job_id, "hits_start")
         await send_log(job_id, "")
         await send_log(job_id, "=" * 60)
         await send_log(job_id, "HIT CALLING")
@@ -326,6 +330,7 @@ async def run_hit_calling(
                 full_gene_effect_file=full_gene_effect_file
             )
         await send_log(job_id, "Hit calling report generated.")
+        log_memory(job_manager.logs_dir, job_id, "hits_complete")
         await asyncio.sleep(0.1)
         await manager.send_status("hits_report_ready", "Hits report ready", job_id)
 
@@ -361,6 +366,7 @@ async def convert_hdf5_to_csv(hdf5_dir: Path, csv_dir: Path, job_id: str):
 async def run_chronos_analysis(job_id: str):
     """Main orchestrator for Chronos analysis pipeline."""
     try:
+        log_memory(job_manager.logs_dir, job_id, "chronos_start")
         await send_log(job_id, "\n" + "=" * 60)
         await send_log(job_id, "CHRONOS ANALYSIS")
         await send_log(job_id, "=" * 60 + "\n")
@@ -392,6 +398,7 @@ async def run_chronos_analysis(job_id: str):
 
         # Mark Chronos as complete and send user to results
         job_manager.mark_chronos_completed()
+        log_memory(job_manager.logs_dir, job_id, "chronos_complete")
         await send_log(job_id, "Chronos analysis complete! Running post-processing...")
         await asyncio.sleep(0.1)
         await manager.send_status(

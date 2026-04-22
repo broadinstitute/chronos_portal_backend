@@ -9,6 +9,7 @@ from ..services.job_manager import job_manager
 from ..services.connection_manager import manager
 from ..services.validation import validate_condition_map_for_sequence_reads
 from ..services.logging_utils import send_log, send_error
+from ..services.monitoring import log_memory
 
 router = APIRouter()
 
@@ -32,6 +33,7 @@ async def preprocess_sequence_reads(job_id: str):
     7. Mark preprocessing complete
     """
     try:
+        log_memory(job_manager.logs_dir, job_id, "preprocessing_start")
         await send_log(job_id, "Starting sequence read preprocessing...")
 
         # Validate condition_map structure
@@ -61,6 +63,7 @@ async def preprocess_sequence_reads(job_id: str):
         await send_log(job_id, f"Generated readcount matrix: {readcounts.shape}")
 
         job_manager.mark_preprocessing_complete()
+        log_memory(job_manager.logs_dir, job_id, "preprocessing_complete")
 
         await send_log(job_id, "Sequence read preprocessing complete!")
         await manager.send_status(

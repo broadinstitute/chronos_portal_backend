@@ -33,7 +33,8 @@ RUN pip install --no-cache-dir \
     fastapi==0.135.2 \
     "uvicorn[standard]==0.42.0" \
     python-multipart==0.0.22 \
-    pypdf==6.9.2
+    pypdf==6.9.2 \
+    psutil==6.0.0
 
 # Clone the backend repo
 RUN git clone https://github.com/broadinstitute/chronos_portal_backend.git .
