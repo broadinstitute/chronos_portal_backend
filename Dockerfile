@@ -5,7 +5,7 @@ WORKDIR /app
 # Install git for cloning repos and Java for PoolQ
 RUN apt-get update && apt-get install -y \
     git \
-    openjdk-17-jre-headless \
+    openjdk-21-jre-headless \
     && rm -rf /var/lib/apt/lists/*
 
 # Install chronos dependencies explicitly
