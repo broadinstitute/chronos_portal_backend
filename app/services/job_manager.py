@@ -15,6 +15,28 @@ class JobManager:
         self.uploaded_files: dict = {}
         self.job_config: dict = {}
 
+    def _resolve_config_path(self, stored: str) -> Path:
+        """Resolve a path from config.json to an absolute Path.
+
+        New jobs store paths relative to base_dir. Old jobs (pre-refactor, including
+        Docker-created jobs) store absolute paths and are used as-is.
+        """
+        p = Path(stored)
+        if p.is_absolute():
+            return p
+        return self.base_dir / p
+
+    def _to_config_path(self, path: Path) -> str:
+        """Convert an absolute path to a relative string for storage in config.json.
+
+        Falls back to the absolute string if the path is outside base_dir (e.g.
+        an externally-mounted data directory).
+        """
+        try:
+            return str(path.relative_to(self.base_dir))
+        except ValueError:
+            return str(path)
+
     def ensure_directories(self):
         self.jobs_dir.mkdir(exist_ok=True)
         self.logs_dir.mkdir(exist_ok=True)
@@ -100,7 +122,7 @@ class JobManager:
             self.uploaded_files = {}
             for file_type, file_info in self.job_config.get("files", {}).items():
                 if file_info.get("path"):
-                    path = Path(file_info["path"])
+                    path = self._resolve_config_path(file_info["path"])
                     if path.exists():
                         self.uploaded_files[file_type] = path
 
@@ -173,7 +195,7 @@ class JobManager:
             "original_filename": original_filename,
             "format": file_format,
             "uploaded_at": datetime.now().isoformat(),
-            "path": str(path) if path else None,
+            "path": self._to_config_path(path) if path else None,
         }
         self._save_config()
 
@@ -251,13 +273,12 @@ class JobManager:
         """Add a readcount file to the list of readcount files."""
         if "readcount_files" not in self.job_config:
             self.job_config["readcount_files"] = []
-        self.job_config["readcount_files"].append(str(file_path))
+        self.job_config["readcount_files"].append(self._to_config_path(file_path))
         self._save_config()
 
     def get_readcount_files(self) -> list[Path]:
         """Get list of all readcount file paths."""
-        paths = self.job_config.get("readcount_files", [])
-        return [Path(p) for p in paths]
+        return [self._resolve_config_path(p) for p in self.job_config.get("readcount_files", [])]
 
     def get_readcount_count(self) -> int:
         """Get count of readcount files."""
